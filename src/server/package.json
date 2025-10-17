@@ -1,0 +1,41 @@
+{
+  "name": "procell-server",
+  "version": "1.0.0",
+  "description": "procell API Server - Express/Node.js",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "setup": "node setup.js",
+    "check": "node -e \"console.log('Node.js version:', process.version); console.log('✅ Server ready to start!');\"",
+    "quick-start": "npm install && node setup.js && npm run dev"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "morgan": "^1.10.0",
+    "helmet": "^7.1.0",
+    "dotenv": "^16.3.1",
+    "@supabase/supabase-js": "^2.39.3",
+    "express-rate-limit": "^7.1.5",
+    "compression": "^1.7.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "express",
+    "nodejs",
+    "api",
+    "procell",
+    "palestine",
+    "ecommerce"
+  ],
+  "author": "procell",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

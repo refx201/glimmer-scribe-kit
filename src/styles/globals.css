@@ -7,60 +7,53 @@
 :root {
   --font-size: 16px; /* Enhanced base font size for mobile */
   
-  /* ProCell Brand Colors - Enhanced Blue Theme */
-  --procell-primary: 220 70% 15%; /* Deep blue */
-  --procell-primary-light: 220 65% 25%; /* Lighter deep blue */
-  --procell-secondary: 210 85% 45%; /* Vibrant blue */
-  --procell-secondary-light: 210 80% 60%; /* Light vibrant blue */
-  --procell-accent: 200 95% 50%; /* Cyan accent */
-  --procell-accent-light: 195 90% 65%; /* Light cyan */
-  
-  /* Blue Gradient Colors */
-  --gradient-blue-start: 225 85% 35%; /* Rich blue start */
-  --gradient-blue-mid: 215 90% 45%; /* Vibrant blue mid */
-  --gradient-blue-end: 205 95% 55%; /* Bright blue end */
-  --gradient-deep-start: 230 75% 25%; /* Deep blue start */
-  --gradient-deep-end: 210 85% 40%; /* Deep blue end */
-  --procell-neutral: 215 20% 65%; /* Slate 500 HSL */
-  --procell-dark: 222 84% 5%; /* Slate 900 HSL */
-  --procell-light: 210 40% 98%; /* Slate 50 HSL */
-  --procell-gray: 210 31% 80%; /* Slate 200 HSL */
+  /* ProCell Brand Colors - Enhanced Professional Theme */
+  --procell-primary: #0f172a; /* Slate 900 - Professional dark */
+  --procell-primary-light: #1e293b; /* Slate 800 */
+  --procell-secondary: #3b82f6; /* Blue 500 - Technology */
+  --procell-secondary-light: #60a5fa; /* Blue 400 */
+  --procell-accent: #10b981; /* Emerald 500 - Success/Growth */
+  --procell-accent-light: #34d399; /* Emerald 400 */
+  --procell-neutral: #64748b; /* Slate 500 */
+  --procell-dark: #0f172a; /* Slate 900 */
+  --procell-light: #f8fafc; /* Slate 50 */
+  --procell-gray: #e2e8f0; /* Slate 200 */
   
   /* Status Colors */
-  --procell-success: 158 64% 52%; /* Green HSL */
-  --procell-warning: 38 92% 50%; /* Amber HSL */
-  --procell-error: 0 84% 60%; /* Red HSL */
-  --procell-info: 221 83% 53%; /* Blue HSL */
+  --procell-success: #10b981;
+  --procell-warning: #f59e0b;
+  --procell-error: #ef4444;
+  --procell-info: #3b82f6;
   
   /* CTA Enhancement Colors */
-  --cta-primary: 158 64% 52%; /* Green 600 HSL */
-  --cta-primary-hover: 158 64% 45%; /* Green 700 HSL */
-  --cta-secondary: 0 74% 42%; /* Red 600 HSL */
-  --cta-secondary-hover: 0 68% 32%; /* Red 700 HSL */
-  --cta-accent: 258 90% 66%; /* Violet 600 HSL */
-  --cta-accent-hover: 262 83% 58%; /* Violet 700 HSL */
+  --cta-primary: #059669; /* Green 600 - Strong buy now */
+  --cta-primary-hover: #047857; /* Green 700 */
+  --cta-secondary: #dc2626; /* Red 600 - Urgency */
+  --cta-secondary-hover: #b91c1c; /* Red 700 */
+  --cta-accent: #7c3aed; /* Violet 600 - Special offers */
+  --cta-accent-hover: #6d28d9; /* Violet 700 */
   
   /* Updated Design System Colors */
-  --background: 0 0% 100%; /* Pure white HSL */
-  --foreground: 222 84% 5%; /* Dark text HSL */
-  --card: 0 0% 100%; /* Pure white HSL */
-  --card-foreground: 222 84% 5%; /* Dark text HSL */
-  --popover: 0 0% 100%; /* Pure white HSL */
-  --popover-foreground: 222 84% 5%; /* Dark text HSL */
-  --primary: 220 70% 15%; /* Primary blue HSL */
-  --primary-foreground: 0 0% 100%; /* White HSL */
-  --secondary: 210 40% 98%; /* Light background HSL */
-  --secondary-foreground: 222 84% 5%; /* Dark text HSL */
-  --muted: 210 40% 96%; /* Very light HSL */
-  --muted-foreground: 215 20% 65%; /* Muted text HSL */
-  --accent: 210 85% 45%; /* Accent blue HSL */
-  --accent-foreground: 0 0% 100%; /* White HSL */
-  --destructive: 0 84% 60%; /* Error red HSL */
-  --destructive-foreground: 0 0% 100%; /* White HSL */
-  --border: 220 13% 91%; /* Light border HSL */
-  --input: 0 0% 100%; /* White input HSL */
-  --input-background: 210 40% 98%; /* Light input bg HSL */
-  --switch-background: 210 31% 80%; /* Switch bg HSL */
+  --background: #ffffff;
+  --foreground: var(--procell-dark);
+  --card: #ffffff;
+  --card-foreground: var(--procell-dark);
+  --popover: #ffffff;
+  --popover-foreground: var(--procell-dark);
+  --primary: var(--procell-primary);
+  --primary-foreground: #ffffff;
+  --secondary: var(--procell-light);
+  --secondary-foreground: var(--procell-dark);
+  --muted: #f1f5f9;
+  --muted-foreground: var(--procell-neutral);
+  --accent: var(--procell-secondary);
+  --accent-foreground: #ffffff;
+  --destructive: var(--procell-error);
+  --destructive-foreground: #ffffff;
+  --border: rgba(15, 23, 42, 0.08);
+  --input: transparent;
+  --input-background: #f8fafc;
+  --switch-background: #e2e8f0;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --ring: var(--procell-secondary);
@@ -81,33 +74,33 @@
 }
 
 .dark {
-  --background: 220 70% 15%; /* Dark background HSL */
-  --foreground: 210 40% 98%; /* Light text HSL */
-  --card: 220 65% 25%; /* Dark card HSL */
-  --card-foreground: 210 40% 98%; /* Light text HSL */
-  --popover: 220 65% 25%; /* Dark popover HSL */
-  --popover-foreground: 210 40% 98%; /* Light text HSL */
-  --primary: 210 85% 45%; /* Primary blue HSL */
-  --primary-foreground: 0 0% 100%; /* White HSL */
-  --secondary: 215 25% 27%; /* Secondary dark HSL */
-  --secondary-foreground: 210 40% 98%; /* Light text HSL */
-  --muted: 215 25% 27%; /* Muted dark HSL */
-  --muted-foreground: 215 20% 65%; /* Muted text HSL */
-  --accent: 200 95% 50%; /* Accent cyan HSL */
-  --accent-foreground: 0 0% 100%; /* White HSL */
-  --destructive: 0 84% 60%; /* Error red HSL */
-  --destructive-foreground: 0 0% 100%; /* White HSL */
-  --border: 221 39% 11%; /* Dark border HSL */
-  --input: 215 25% 27%; /* Dark input HSL */
-  --ring: 210 85% 45%; /* Ring blue HSL */
-  --sidebar: 220 65% 25%; /* Dark sidebar HSL */
-  --sidebar-foreground: 210 40% 98%; /* Light text HSL */
-  --sidebar-primary: 210 85% 45%; /* Sidebar primary HSL */
-  --sidebar-primary-foreground: 0 0% 100%; /* White HSL */
-  --sidebar-accent: 215 25% 27%; /* Sidebar accent HSL */
-  --sidebar-accent-foreground: 210 40% 98%; /* Light text HSL */
-  --sidebar-border: 221 39% 11%; /* Sidebar border HSL */
-  --sidebar-ring: 210 85% 45%; /* Sidebar ring HSL */
+  --background: var(--procell-primary);
+  --foreground: #f8fafc;
+  --card: var(--procell-primary-light);
+  --card-foreground: #f8fafc;
+  --popover: var(--procell-primary-light);
+  --popover-foreground: #f8fafc;
+  --primary: var(--procell-secondary);
+  --primary-foreground: #ffffff;
+  --secondary: #475569;
+  --secondary-foreground: #f8fafc;
+  --muted: #475569;
+  --muted-foreground: #94a3b8;
+  --accent: var(--procell-accent);
+  --accent-foreground: #ffffff;
+  --destructive: var(--procell-error);
+  --destructive-foreground: #ffffff;
+  --border: rgba(59, 130, 246, 0.15);
+  --input: #475569;
+  --ring: var(--procell-secondary);
+  --sidebar: var(--procell-primary-light);
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: var(--procell-secondary);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #475569;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: rgba(59, 130, 246, 0.1);
+  --sidebar-ring: var(--procell-secondary);
 }
 
 @theme inline {
