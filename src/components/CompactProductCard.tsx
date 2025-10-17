@@ -87,7 +87,7 @@ const CompactProductCard = memo(({ product, onNavigate }: CompactProductCardProp
         <ImageLoader
           src={getOptimizedImageUrl(product.image || '', 300, 400)}
           alt={product.name}
-          className="w-full h-full object-contain p-4"
+          className="w-full h-full object-contain p-8"
           fallbackSrc={getProductImageFallback('هواتف ذكية')}
         />
         
