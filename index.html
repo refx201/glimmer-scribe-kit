@@ -1,24 +1,103 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ar">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" href="/fav.png" type="image/png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>helo-welcomes-you</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+    
+    <title>Procell - أفضل متجر للهواتف الذكية والإكسسوارات في فلسطين</title>
+    <meta name="description" content="Procell - متجرك المتخصص للهواتف الذكية والإكسسوارات في فلسطين. أحدث الموديلات، أفضل الأسعار، ضمان شامل وخدمة عملاء مميزة. تسوق الآن!" />
+    <meta name="keywords" content="Procell, بروسيل, هواتف ذكية, جوالات, إكسسوارات, فلسطين, سامسونج, آيفون, شاومي, أوبو, ريلمي, هواوي, إكسسوارات جوال, شواحن, كفرات, واقيات شاشة, سماعات, powerbank" />
+    <meta name="author" content="procell" />
+    <meta name="robots" content="index, follow" />
+    <meta name="google-site-verification" content="your-verification-code" />
+    <link rel="canonical" href="https://procell.app/" />
 
-    <meta property="og:title" content="helo-welcomes-you" />
-    <meta property="og:description" content="Lovable Generated Project" />
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:url" content="https://procell.app/" />
+    <meta property="og:title" content="Procell - أفضل متجر للهواتف الذكية والإكسسوارات في فلسطين" />
+    <meta property="og:description" content="Procell - متجرك المتخصص للهواتف الذكية والإكسسوارات في فلسطين. أحدث الموديلات، أفضل الأسعار، ضمان شامل وخدمة عملاء مميزة." />
+    <meta property="og:image" content="https://procell.app/lovable-uploads/aa37c092-1b08-444d-ae8a-aebb6ca58b5b.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="ar_PS" />
+    <meta property="og:site_name" content="procell" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:url" content="https://procell.app/" />
+    <meta name="twitter:title" content="Procell - أفضل متجر للهواتف الذكية والإكسسوارات في فلسطين" />
+    <meta name="twitter:description" content="Procell - متجرك المتخصص للهواتف الذكية والإكسسوارات في فلسطين. أحدث الموديلات، أفضل الأسعار، ضمان شامل وخدمة عملاء مميزة." />
+    <meta name="twitter:image" content="https://procell.app/lovable-uploads/aa37c092-1b08-444d-ae8a-aebb6ca58b5b.png" />
+    <meta name="twitter:site" content="@ProcellPalestine" />
+
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "8093b729-1bcd-4ce7-b9b1-1e68814019e6",
+          safari_web_id: "web.onesignal.auto.1e4cdd3c-fd67-4db9-823a-6a25dd50e774",
+          notifyButton: {
+            enable: true,
+          },
+        });
+      });
+    </script>
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Store",
+      "name": "procell",
+      "description": "متجر متخصص في بيع الهواتف الذكية والإكسسوارات في فلسطين",
+      "url": "https://procell.app",
+      "logo": "https://procell.app/lovable-uploads/aa37c092-1b08-444d-ae8a-aebb6ca58b5b.png",
+      "image": "https://procell.app/lovable-uploads/aa37c092-1b08-444d-ae8a-aebb6ca58b5b.png",
+      "telephone": "+970-599-123456",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "شارع الرئيسي",
+        "addressLocality": "رام الله",
+        "addressCountry": "PS"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 31.9038,
+        "longitude": 35.2034
+      },
+      "openingHours": "Mo-Sa 08:00-22:00",
+      "priceRange": "$$",
+      "paymentAccepted": ["Cash", "Credit Card", "PayPal"],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "منتجات Procell",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Product",
+              "name": "هواتف ذكية"
+            }
+          },
+          {
+            "@type": "Offer", 
+            "itemOffered": {
+              "@type": "Product",
+              "name": "إكسسوارات الجوال"
+            }
+          }
+        ]
+      }
+    }
+    </script>
   </head>
 
   <body>
     <div id="root"></div>
+    <!-- مهم لمشروع Vite/React -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
