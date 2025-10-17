@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { User } from '@supabase/supabase-js'
+import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 
 interface AuthContextType {
   user: User | null
+  session: Session | null
   loading: boolean
   signUp: (email: string, password: string, name: string, userType?: string, phone?: string) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
@@ -18,39 +19,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Handle OAuth callback hash fragments
-    const handleOAuthCallback = async () => {
-      const hash = window.location.hash
-      if (hash && hash.includes('access_token')) {
-        try {
-          // Let Supabase handle the hash
-          const { data, error } = await supabase.auth.getSession()
-          if (error) {
-            console.error('OAuth callback error:', error)
-          } else if (data.session) {
-            console.log('OAuth session established:', data.session.user.email)
-            // Clean up the URL
-            window.history.replaceState({}, document.title, window.location.pathname)
-          }
-        } catch (error) {
-          console.error('Error processing OAuth callback:', error)
-        }
-      }
-    }
-
-    handleOAuthCallback()
-
-    // Listen for auth changes
+    // Set up auth state listener FIRST (before checking for existing session)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
         
+        // Store both session and user
+        setSession(session)
         setUser(session?.user ?? null)
-        setLoading(false)
         
         // Set basic profile from user metadata
         if (session?.user) {
@@ -61,32 +42,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             userType: session.user.user_metadata?.userType || 'customer'
           })
           
-          // Handle successful OAuth sign in
-        if (event === 'SIGNED_IN') {
-          const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'المستخدم';
-          const isGoogleSignIn = session.user.app_metadata?.provider === 'google';
-          
-          // Show welcome message
-          toast.success(`أهلاً بك، ${userName}!`, {
-            description: isGoogleSignIn ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح'
-          });
-          
-          // Redirect to profile page if not already there
-          if (window.location.pathname !== '/profile') {
-            // Small timeout to allow the toast to show before redirect
-            setTimeout(() => {
-              window.location.href = '/profile';
-            }, 500);
+          // Handle successful sign in
+          if (event === 'SIGNED_IN') {
+            const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'المستخدم';
+            const isGoogleSignIn = session.user.app_metadata?.provider === 'google';
+            
+            // Show welcome message
+            toast.success(`أهلاً بك، ${userName}!`, {
+              description: isGoogleSignIn ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح'
+            });
+            
+            // Clean up OAuth hash from URL if present
+            if (window.location.hash.includes('access_token')) {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
           }
-        }
         } else {
           setUserProfile(null)
         }
+        
+        setLoading(false)
       }
     )
 
-    // Get initial session
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
         setUserProfile({
@@ -209,6 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     user,
+    session,
     loading,
     signUp,
     signIn,
