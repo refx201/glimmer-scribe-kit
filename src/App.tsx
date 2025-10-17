@@ -27,6 +27,7 @@ import { CompactProductCard } from './components/CompactProductCard';
 import { SecurePaymentMethods } from './components/SecurePaymentMethods';
 import { CompactFeatures } from './components/CompactFeatures';
 import { FloatingWhatsAppButton } from './components/FloatingWhatsApp';
+import { NotificationPrompt } from './components/NotificationPrompt';
 
 // Data
 import { DETAILED_PRODUCT } from './lib/data';
@@ -424,6 +425,7 @@ function ProCellApp() {
       <Footer onNavigate={navigateToPage} />
       <NetworkStatus showServerStatus={true} />
       <ServerStatusIndicator />
+      <NotificationPrompt />
       <Toaster position="top-right" />
     </div>
   );
