@@ -1,0 +1,485 @@
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Badge } from './ui/badge';
+import { 
+  RefreshCw, 
+  Smartphone, 
+  DollarSign, 
+  Clock, 
+  Shield, 
+  CheckCircle, 
+  TrendingUp,
+  Zap,
+  ArrowRight,
+  Star,
+  Users,
+  Award
+} from 'lucide-react';
+import { toast } from 'sonner'
+import { apiCall } from '../lib/supabase';
+import { ImageWithFallback } from './figma/ImageWithFallback';
+
+export function TradeInPage() {
+  const [loading, setLoading] = useState(false);
+  const [requestData, setRequestData] = useState({
+    brand: '',
+    model: '',
+    condition: '',
+    storage: '',
+    accessories: '',
+    customer_name: '',
+    customer_phone: ''
+  });
+
+  const benefits = [
+    {
+      icon: <DollarSign className="h-6 w-6" />,
+      title: 'أسعار عادلة',
+      description: 'احصل على أفضل سعر لجهازك القديم في السوق',
+      highlight: 'حتى 80% من السعر الأصلي'
+    },
+    {
+      icon: <Clock className="h-6 w-6" />,
+      title: 'تقييم سريع',
+      description: 'تقييم فوري لجهازك خلال دقائق',
+      highlight: '5 دقائق فقط'
+    },
+    {
+      icon: <Shield className="h-6 w-6" />,
+      title: 'ضمان آمن',
+      description: 'حماية كاملة لبياناتك وخصوصيتك',
+      highlight: 'محو آمن للبيانات'
+    },
+    {
+      icon: <Zap className="h-6 w-6" />,
+      title: 'استبدال فوري',
+      description: 'استبدل واحصل على جهاز جديد في نفس اليوم',
+      highlight: 'نفس اليوم'
+    }
+  ];
+
+  const popularModels = [
+    { brand: 'iPhone', model: '15 Pro', estimatedValue: '₪2,800-3,200', image: 'https://images.unsplash.com/photo-1592286049617-3feb4da2681e?w=200&h=200&fit=crop' },
+    { brand: 'Samsung', model: 'Galaxy S24', estimatedValue: '₪2,200-2,800', image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200&h=200&fit=crop' },
+    { brand: 'iPhone', model: '14', estimatedValue: '₪2,000-2,400', image: 'https://images.unsplash.com/photo-1592286049617-3feb4da2681e?w=200&h=200&fit=crop' },
+    { brand: 'Google', model: 'Pixel 8', estimatedValue: '₪1,800-2,200', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&h=200&fit=crop' }
+  ];
+
+  const testimonials = [
+    {
+      name: 'أحمد محمد',
+      location: 'نابلس',
+      rating: 5,
+      text: 'خدمة الاستبدال كانت ممتازة! حصلت على سعر عادل وتم الاستبدال في نفس اليوم.',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+    },
+    {
+      name: 'سارة أحمد',
+      location: 'رام الله',
+      rating: 5,
+      text: 'سريع وآمن! استبدلت هاتفي القديم وحصلت على iPhone جديد بسعر ممتاز.',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b1ab?w=150&h=150&fit=crop&crop=face'
+    },
+    {
+      name: 'محمد خالد',
+      location: 'الخليل',
+      rating: 5,
+      text: 'عملية سهلة جداً والفريق محترف. أنصح الجميع بخدمة الاستبدال.',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+    }
+  ];
+
+  const handleSubmitRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!requestData.brand || !requestData.model || !requestData.condition || !requestData.customer_name || !requestData.customer_phone) {
+      toast.error('يرجى ملء جميع الحقول المطلوبة');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // Insert into database without estimated price
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data, error } = await supabase
+        .from('trade_in_requests')
+        .insert([{
+          brand: requestData.brand,
+          model: requestData.model,
+          condition: requestData.condition,
+          storage: requestData.storage,
+          accessories: requestData.accessories,
+          customer_name: requestData.customer_name,
+          customer_phone: requestData.customer_phone,
+          status: 'pending'
+        }])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Send Telegram notification
+      try {
+        await supabase.functions.invoke('send-telegram-notification', {
+          body: {
+            type: 'trade_in',
+            data: {
+              ...data,
+              created_at: new Date(data.created_at).toISOString()
+            }
+          }
+        });
+      } catch (telegramError) {
+        console.error('Telegram notification error:', telegramError);
+      }
+      
+      toast.success('تم إرسال طلبك بنجاح! سنتواصل معك قريباً.');
+      
+      // Reset form
+      setRequestData({
+        brand: '',
+        model: '',
+        condition: '',
+        storage: '',
+        accessories: '',
+        customer_name: '',
+        customer_phone: ''
+      });
+    } catch (error: any) {
+      console.error('Trade-in request error:', error);
+      toast.error(error.message || 'حدث خطأ في إرسال الطلب. حاول مرة أخرى.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setRequestData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section className="py-16 md:py-24 bg-gradient-to-br from-[#1e3a8a] via-[#2563eb] to-[#3b82f6] relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-1/4 w-64 h-64 bg-white rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-white rounded-full filter blur-3xl"></div>
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center space-y-6 mb-12">
+            <Badge className="w-fit mx-auto bg-white/20 backdrop-blur-sm text-white border-white/30 px-4 py-2">
+              <RefreshCw className="h-4 w-4 ml-2" />
+              استبدال الأجهزة
+            </Badge>
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white drop-shadow-lg">
+              استبدل هاتفك القديم بجديد
+            </h1>
+            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
+              احصل على أفضل قيمة لهاتفك القديم واستبدله بأحدث الأجهزة بسعر مناسب
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8 max-w-4xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4">
+                <div className="text-2xl md:text-3xl font-bold text-white mb-1">500+</div>
+                <div className="text-sm text-white/80">جهاز مستبدل</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4">
+                <div className="text-2xl md:text-3xl font-bold text-white mb-1">15%</div>
+                <div className="text-sm text-white/80">خصم إضافي</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4">
+                <div className="text-2xl md:text-3xl font-bold text-white mb-1">3,500₪</div>
+                <div className="text-sm text-white/80">متوسط الأسعار</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4">
+                <div className="text-2xl md:text-3xl font-bold text-white mb-1">24/7</div>
+                <div className="text-sm text-white/80">دعم مستمر</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-16 md:py-20">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
+            {/* Benefits & Popular Models */}
+            <div className="space-y-8">
+              {/* Benefits */}
+              <div className="space-y-6">
+                <h3 className="text-xl md:text-2xl text-procell-dark">لماذا تختار خدمة الاستبدال؟</h3>
+                <div className="space-y-4">
+                  {benefits.map((benefit, index) => (
+                    <div key={index} className="flex items-start space-x-4 p-4 rounded-lg bg-white/50 border border-procell-accent/20 hover:shadow-md transition-shadow">
+                      <div className="text-procell-accent p-2 bg-procell-accent/10 rounded-lg shrink-0">
+                        {benefit.icon}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-procell-dark font-medium">{benefit.title}</h4>
+                          <Badge variant="outline" className="border-procell-accent text-procell-accent text-xs">
+                            {benefit.highlight}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Info Card */}
+              <Card className="bg-gradient-to-br from-procell-accent/5 to-procell-primary/5 border-procell-accent/20">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="text-procell-accent">
+                    <Clock className="h-12 w-12 mx-auto mb-4" />
+                  </div>
+                  <h3 className="text-xl font-bold text-procell-dark">
+                    كيف تعمل خدمة التقييم؟
+                  </h3>
+                  <div className="space-y-3 text-sm text-muted-foreground">
+                    <p className="flex items-start gap-2">
+                      <span className="text-procell-accent font-bold">1.</span>
+                      <span>املأ النموذج بتفاصيل جهازك ومعلوماتك</span>
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="text-procell-accent font-bold">2.</span>
+                      <span>سيقوم فريقنا بمراجعة طلبك</span>
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="text-procell-accent font-bold">3.</span>
+                      <span>سنتواصل معك لتحديد السعر المناسب</span>
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <span className="text-procell-accent font-bold">4.</span>
+                      <span>اتمام عملية الاستبدال أو البيع</span>
+                    </p>
+                  </div>
+                  <Badge className="bg-procell-accent text-white">
+                    تقييم شخصي دقيق لكل جهاز
+                  </Badge>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Estimate Form */}
+            <Card className="border-procell-accent/20 shadow-lg">
+              <CardHeader className="text-center">
+                <CardTitle className="text-xl md:text-2xl text-procell-dark flex items-center justify-center">
+                  <Smartphone className="h-6 w-6 ml-2" />
+                  📋 قييم جهازك الآن
+                </CardTitle>
+                <p className="text-muted-foreground">
+                  أدخل تفاصيل هاتفك ومعلوماتك وسنتواصل معك خلال 24 ساعة لتحديد السعر المناسب
+                </p>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmitRequest} className="space-y-6">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="customer_name">الاسم *</Label>
+                      <Input
+                        id="customer_name"
+                        value={requestData.customer_name}
+                        onChange={(e) => handleInputChange('customer_name', e.target.value)}
+                        placeholder="أدخل اسمك"
+                        required
+                        className="border-procell-accent/20 focus:border-procell-accent"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="customer_phone">رقم الهاتف *</Label>
+                      <Input
+                        id="customer_phone"
+                        value={requestData.customer_phone}
+                        onChange={(e) => handleInputChange('customer_phone', e.target.value)}
+                        placeholder="أدخل رقم هاتفك"
+                        required
+                        className="border-procell-accent/20 focus:border-procell-accent"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="brand">العلامة التجارية *</Label>
+                      <Select onValueChange={(value) => handleInputChange('brand', value)} value={requestData.brand}>
+                        <SelectTrigger className="border-procell-accent/20 focus:border-procell-accent">
+                          <SelectValue placeholder="اختر العلامة التجارية" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="apple">Apple</SelectItem>
+                          <SelectItem value="samsung">Samsung</SelectItem>
+                          <SelectItem value="google">Google</SelectItem>
+                          <SelectItem value="oneplus">OnePlus</SelectItem>
+                          <SelectItem value="xiaomi">Xiaomi</SelectItem>
+                          <SelectItem value="huawei">Huawei</SelectItem>
+                          <SelectItem value="other">أخرى</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="model">الموديل *</Label>
+                      <Input
+                        id="model"
+                        value={requestData.model}
+                        onChange={(e) => handleInputChange('model', e.target.value)}
+                        placeholder="مثل: iPhone 15, Galaxy S24"
+                        required
+                        className="border-procell-accent/20 focus:border-procell-accent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="condition">حالة الجهاز *</Label>
+                    <Select onValueChange={(value) => handleInputChange('condition', value)} value={requestData.condition}>
+                      <SelectTrigger className="border-procell-accent/20 focus:border-procell-accent">
+                        <SelectValue placeholder="اختر حالة الجهاز" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="excellent">ممتازة - كالجديد</SelectItem>
+                        <SelectItem value="good">جيدة - خدوش بسيطة</SelectItem>
+                        <SelectItem value="fair">متوسطة - خدوش واضحة</SelectItem>
+                        <SelectItem value="poor">سيئة - تلفيات ظاهرة</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="storage">مساحة التخزين</Label>
+                      <Select onValueChange={(value) => handleInputChange('storage', value)} value={requestData.storage}>
+                        <SelectTrigger className="border-procell-accent/20 focus:border-procell-accent">
+                          <SelectValue placeholder="اختر المساحة" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="64gb">64 جيجا</SelectItem>
+                          <SelectItem value="128gb">128 جيجا</SelectItem>
+                          <SelectItem value="256gb">256 جيجا</SelectItem>
+                          <SelectItem value="512gb">512 جيجا</SelectItem>
+                          <SelectItem value="1tb">1 تيرا</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="accessories">الإكسسوارات</Label>
+                      <Select onValueChange={(value) => handleInputChange('accessories', value)} value={requestData.accessories}>
+                        <SelectTrigger className="border-procell-accent/20 focus:border-procell-accent">
+                          <SelectValue placeholder="اختر الإكسسوارات" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="complete">كاملة (علبة + شاحن + سماعات)</SelectItem>
+                          <SelectItem value="partial">جزئية (علبة + شاحن)</SelectItem>
+                          <SelectItem value="box-only">العلبة فقط</SelectItem>
+                          <SelectItem value="none">بدون إكسسوارات</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-procell-accent to-procell-accent-light hover:from-procell-accent/90 hover:to-procell-accent-light/90" 
+                    size="lg" 
+                    disabled={loading}
+                  >
+                    <CheckCircle className="h-5 w-5 ml-2" />
+                    {loading ? 'جاري الإرسال...' : 'إرسال الطلب'}
+                    <ArrowRight className="h-5 w-5 mr-2" />
+                  </Button>
+
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      سنتواصل معك قريباً لتقييم جهازك
+                    </p>
+                    <div className="flex justify-center items-center space-x-4 text-xs text-procell-accent">
+                      <div className="flex items-center">
+                        <CheckCircle className="h-3 w-3 ml-1" />
+                        <span>تقييم مجاني</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="h-3 w-3 ml-1" />
+                        <span>رد سريع</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Shield className="h-3 w-3 ml-1" />
+                        <span>بيانات آمنة</span>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Process Steps */}
+          <div className="bg-white/50 rounded-2xl p-6 md:p-8 border border-procell-accent/20 mb-16">
+            <h3 className="text-xl md:text-2xl text-center text-procell-dark mb-8">كيف تعمل خدمة الاستبدال؟</h3>
+            <div className="grid md:grid-cols-4 gap-6">
+              {[
+                { step: '1', title: 'قدم تفاصيل جهازك', desc: 'املأ النموذج بمعلومات الجهاز' },
+                { step: '2', title: 'احصل على التقدير', desc: 'سنرسل لك السعر المقترح خلال دقائق' },
+                { step: '3', title: 'أحضر الجهاز', desc: 'زر أقرب فرع لنا أو اطلب خدمة التوصيل' },
+                { step: '4', title: 'استلم الجديد', desc: 'اختر جهازك الجديد واستلمه فوراً' }
+              ].map((step, index) => (
+                <div key={index} className="text-center space-y-3">
+                  <div className="w-12 h-12 bg-procell-accent text-white rounded-full flex items-center justify-center mx-auto text-lg font-bold">
+                    {step.step}
+                  </div>
+                  <h4 className="text-sm font-medium text-procell-dark">{step.title}</h4>
+                  <p className="text-xs text-muted-foreground">{step.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Customer Testimonials */}
+          <div className="space-y-8">
+            <h3 className="text-xl md:text-2xl text-center text-procell-dark">ماذا يقول عملاؤنا؟</h3>
+            <div className="grid md:grid-cols-3 gap-6">
+              {testimonials.map((testimonial, index) => (
+                <Card key={index} className="hover:shadow-lg transition-shadow border-procell-primary/10">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="flex text-procell-secondary">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 fill-current" />
+                      ))}
+                    </div>
+                    <blockquote className="text-sm text-procell-dark">
+                      "{testimonial.text}"
+                    </blockquote>
+                    <div className="flex items-center space-x-3">
+                      <ImageWithFallback
+                        src={testimonial.avatar}
+                        alt={testimonial.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div>
+                        <div className="text-sm font-medium text-procell-dark">
+                          {testimonial.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {testimonial.location}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
