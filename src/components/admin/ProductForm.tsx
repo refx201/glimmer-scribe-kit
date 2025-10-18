@@ -26,6 +26,7 @@ const ProductForm = ({ onSuccess, onCancel, editingProduct }: ProductFormProps) 
   const [newProduct, setNewProduct] = useState({
     name: editingProduct?.name || "",
     brand_id: editingProduct?.brand_id || null,
+    filter_category_id: editingProduct?.filter_category_id || null,
     original_price: editingProduct?.original_price?.toString() || "",
     sale_price: editingProduct?.sale_price?.toString() || "",
     discount: editingProduct?.discount?.toString() || "0",
@@ -46,6 +47,7 @@ const ProductForm = ({ onSuccess, onCancel, editingProduct }: ProductFormProps) 
     setNewProduct({
       name: "iPhone 14 Pro Max",
       brand_id: null,
+      filter_category_id: null,
       original_price: "4999",
       sale_price: "4499",
       discount: "10",
@@ -287,6 +289,7 @@ const ProductForm = ({ onSuccess, onCancel, editingProduct }: ProductFormProps) 
           <BasicFields
             name={newProduct.name}
             brandId={newProduct.brand_id}
+            filterCategoryId={newProduct.filter_category_id}
             type={newProduct.type}
             image={newProduct.image}
             description={newProduct.specifications.description}

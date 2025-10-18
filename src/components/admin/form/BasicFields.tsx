@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/select";
 import ImageUploadField from "./ImageUploadField";
 import SpecificationGenerator from "./SpecificationGenerator";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 interface BasicFieldsProps {
   name: string;
@@ -16,12 +18,14 @@ interface BasicFieldsProps {
   type: string;
   image: string;
   description?: string;
+  filterCategoryId?: string | null;
   brands: any[];
   onChange: (values: {
     name?: string;
     brand_id?: string | null;
     type?: string;
     image?: string;
+    filter_category_id?: string | null;
     specifications?: { 
       description: string; 
       details?: Record<string, string>;
@@ -35,9 +39,25 @@ const BasicFields = ({
   type, 
   image, 
   description = "", 
+  filterCategoryId = null,
   brands, 
   onChange 
 }: BasicFieldsProps) => {
+  const { data: filterCategories } = useQuery({
+    queryKey: ['filter-categories', type],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('product_filter_categories')
+        .select('*')
+        .eq('type', type === 'both' ? 'device' : type)
+        .eq('is_active', true)
+        .order('display_order');
+      if (error) throw error;
+      return data;
+    },
+    enabled: type === 'device' || type === 'accessory' || type === 'both'
+  });
+
   const handleSpecificationsGenerate = (generatedDescription: string) => {
     onChange({
       specifications: {
@@ -98,6 +118,28 @@ const BasicFields = ({
               <SelectItem value="both" className="hover:bg-blue-50">Both</SelectItem>
             </SelectContent>
           </Select>
+
+          {(type === 'device' || type === 'accessory' || type === 'both') && filterCategories && filterCategories.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">الفئة</label>
+              <Select
+                value={filterCategoryId || "null"}
+                onValueChange={(value) => onChange({ filter_category_id: value === "null" ? null : value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر فئة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="null">بدون فئة</SelectItem>
+                  {filterCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <ImageUploadField 

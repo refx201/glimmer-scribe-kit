@@ -927,6 +927,7 @@ export type Database = {
           created_at: string | null
           discount: number
           featured_order: number | null
+          filter_category_id: string | null
           id: string
           image: string | null
           is_featured: boolean | null
@@ -944,6 +945,7 @@ export type Database = {
           created_at?: string | null
           discount?: number
           featured_order?: number | null
+          filter_category_id?: string | null
           id?: string
           image?: string | null
           is_featured?: boolean | null
@@ -961,6 +963,7 @@ export type Database = {
           created_at?: string | null
           discount?: number
           featured_order?: number | null
+          filter_category_id?: string | null
           id?: string
           image?: string | null
           is_featured?: boolean | null
@@ -977,6 +980,13 @@ export type Database = {
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_filter_category_id_fkey"
+            columns: ["filter_category_id"]
+            isOneToOne: false
+            referencedRelation: "product_filter_categories"
             referencedColumns: ["id"]
           },
         ]

@@ -6,6 +6,9 @@ import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Checkbox } from './ui/checkbox';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+import * as Icons from 'lucide-react';
 import { 
   Search, 
   SlidersHorizontal,
@@ -26,9 +29,12 @@ interface CompactFilterBarProps {
   setSearchTerm: (term: string) => void;
   selectedBrands: string[];
   setSelectedBrands: (brands: string[]) => void;
+  selectedCategories: string[];
+  setSelectedCategories: (categories: string[]) => void;
   priceRange: [number, number];
   setPriceRange: (range: [number, number]) => void;
   brands: Brand[];
+  productType?: 'device' | 'accessory';
   onReset: () => void;
 }
 
@@ -37,12 +43,34 @@ export function CompactFilterBar({
   setSearchTerm,
   selectedBrands,
   setSelectedBrands,
+  selectedCategories,
+  setSelectedCategories,
   priceRange,
   setPriceRange,
   brands,
+  productType,
   onReset
 }: CompactFilterBarProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const { data: filterCategories } = useQuery({
+    queryKey: ['filter-categories', productType],
+    queryFn: async () => {
+      let query = supabase
+        .from('product_filter_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+      
+      if (productType) {
+        query = query.eq('type', productType);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    }
+  });
 
   // Price presets for quick selection
   const pricePresets = [
@@ -61,7 +89,15 @@ export function CompactFilterBar({
     }
   };
 
-  const activeFiltersCount = selectedBrands.length + (priceRange[0] > 0 || priceRange[1] < 5000 ? 1 : 0);
+  const handleCategoryToggle = (categoryId: string) => {
+    if (selectedCategories.includes(categoryId)) {
+      setSelectedCategories(selectedCategories.filter(c => c !== categoryId));
+    } else {
+      setSelectedCategories([...selectedCategories, categoryId]);
+    }
+  };
+
+  const activeFiltersCount = selectedBrands.length + selectedCategories.length + (priceRange[0] > 0 || priceRange[1] < 5000 ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -103,6 +139,43 @@ export function CompactFilterBar({
             </SheetHeader>
             
             <div className="mt-6 space-y-6">
+              {/* Categories Filter */}
+              {filterCategories && filterCategories.length > 0 && (
+                <Card className="bg-white border-gray-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <SlidersHorizontal className="h-4 w-4 text-purple-600" />
+                      <h3 className="font-medium">الفئات</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {filterCategories.map((category) => {
+                        const IconComponent = (Icons as any)[category.icon] || Icons.Tag;
+                        return (
+                          <div
+                            key={category.id}
+                            className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                              selectedCategories.includes(category.id)
+                                ? 'bg-purple-50 border-purple-200'
+                                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                            }`}
+                            onClick={() => handleCategoryToggle(category.id)}
+                          >
+                            <Checkbox
+                              checked={selectedCategories.includes(category.id)}
+                              className="pointer-events-none"
+                            />
+                            <div className="flex items-center gap-1 min-w-0 flex-1">
+                              <IconComponent className="h-4 w-4 text-purple-600" />
+                              <span className="text-xs font-medium truncate">{category.name}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
               {/* Price Filter */}
               <Card className="bg-white border-gray-200">
                 <CardContent className="p-4">
@@ -191,6 +264,20 @@ export function CompactFilterBar({
       {/* Active Filters Display */}
       {activeFiltersCount > 0 && (
         <div className="flex gap-2 flex-wrap">
+          {selectedCategories.map((categoryId) => {
+            const category = filterCategories?.find(c => c.id === categoryId);
+            return category ? (
+              <Badge
+                key={categoryId}
+                variant="secondary"
+                className="bg-purple-100 text-purple-800 hover:bg-purple-200 cursor-pointer"
+                onClick={() => handleCategoryToggle(categoryId)}
+              >
+                {category.name}
+                <X className="h-3 w-3 ml-1" />
+              </Badge>
+            ) : null;
+          })}
           {selectedBrands.map((brand) => (
             <Badge
               key={brand}

@@ -54,6 +54,7 @@ interface OffersPageProps {
 export function OffersPage({ onNavigate }: OffersPageProps = {}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('flash-deals');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('featured');
@@ -171,6 +172,11 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
         return false;
       }
 
+      // Filter category filter
+      if (selectedCategories.length > 0 && !selectedCategories.includes(product.filter_category_id)) {
+        return false;
+      }
+
       // Category filter
       if (selectedCategory !== 'all' && product.category !== selectedCategory) {
         return false;
@@ -210,6 +216,7 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
     setMinPriceInput('0');
     setMaxPriceInput('5000');
     setSelectedBrands([]);
+    setSelectedCategories([]);
     setSelectedCategory('all');
     setSearchTerm('');
   };
@@ -487,7 +494,7 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
   };
 
   const currentProducts = sortProducts(getCurrentProducts());
-  const hasActiveFilters = selectedBrands.length > 0 || priceRange[0] > 0 || priceRange[1] < 5000 || searchTerm;
+  const hasActiveFilters = selectedBrands.length > 0 || selectedCategories.length > 0 || priceRange[0] > 0 || priceRange[1] < 5000 || searchTerm;
 
   // Loading state
   if (loading) {
@@ -707,9 +714,12 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
                 setSearchTerm={setSearchTerm}
                 selectedBrands={selectedBrands}
                 setSelectedBrands={setSelectedBrands}
+                selectedCategories={selectedCategories}
+                setSelectedCategories={setSelectedCategories}
                 priceRange={priceRange}
                 setPriceRange={setPriceRange}
                 brands={brands}
+                productType={activeTab === 'devices' ? 'device' : 'accessory'}
                 onReset={resetFilters}
               />
               
