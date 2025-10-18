@@ -145,6 +145,7 @@ const ProductForm = ({ onSuccess, onCancel, editingProduct }: ProductFormProps) 
       const productData = {
         name: newProduct.name,
         brand_id: newProduct.brand_id || null,
+        filter_category_id: newProduct.filter_category_id || null,
         original_price: parseInt(newProduct.original_price),
         sale_price: parseInt(newProduct.sale_price),
         discount: parseInt(newProduct.discount),
@@ -156,7 +157,6 @@ const ProductForm = ({ onSuccess, onCancel, editingProduct }: ProductFormProps) 
         specifications: newProduct.specifications,
         colors: newProduct.colors
       };
-
       console.log("Saving product with data:", productData);
 
       let productId;

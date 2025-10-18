@@ -21,6 +21,7 @@ export interface OfferProduct {
   isBundle?: boolean;
   items?: string[];
   savings?: number;
+  filter_category_id?: string | null;
 }
 
 export interface Brand {
@@ -48,6 +49,7 @@ export function useOffersData() {
             id,
             name,
             brand_id,
+            filter_category_id,
             sale_price,
             original_price,
             discount,
@@ -76,6 +78,7 @@ export function useOffersData() {
             id,
             name,
             brand_id,
+            filter_category_id,
             sale_price,
             original_price,
             discount,
@@ -182,7 +185,8 @@ export function useOffersData() {
           category: product.type === 'device' ? 'هواتف ذكية' : 'إكسسوارات',
           stock: Math.floor(Math.random() * 50) + 5,
           isLimitedTime: product.is_hot_sale,
-          timeLeft: product.is_hot_sale ? `${Math.floor(Math.random() * 5) + 1}h ${Math.floor(Math.random() * 59)}m` : undefined
+          timeLeft: product.is_hot_sale ? `${Math.floor(Math.random() * 5) + 1}h ${Math.floor(Math.random() * 59)}m` : undefined,
+          filter_category_id: (product as any).filter_category_id || null
         }));
 
         // Transform packages data
