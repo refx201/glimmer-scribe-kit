@@ -51,9 +51,29 @@ export function AuthCallback() {
           return;
         }
 
+        // 1.1) No session yet — if we have an OAuth code, immediately exchange it for a session
+        if (code) {
+          console.log('[AUTH CALLBACK] No existing session. Trying immediate code exchange...');
+          const { error: immediateExchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (immediateExchangeError) {
+            console.warn('[AUTH CALLBACK] Immediate exchange failed:', immediateExchangeError.message);
+          } else {
+            const { data: { session: newSession } } = await supabase.auth.getSession();
+            if (newSession) {
+              console.log('[AUTH CALLBACK] ✅ Session established via immediate exchange');
+              if (!cancelled) {
+                setStatus('done');
+                toast.success('تم تسجيل الدخول بنجاح');
+                setTimeout(() => (window.top ? (window.top.location.href = '/profile') : (window.location.href = '/profile')), 600);
+              }
+              return;
+            }
+          }
+        }
+
         // 2) If no code and no session, this might be after Supabase removed the code from URL.
         // We'll wait briefly for the client to finalize the PKCE exchange automatically (detectSessionInUrl=true).
-        const maxWaitMs = 6000;
+        const maxWaitMs = 12000;
         const intervalMs = 300;
         let waited = 0;
         let attemptedManualExchange = false;
