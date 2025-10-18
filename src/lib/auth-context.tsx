@@ -276,17 +276,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log('[AUTH] Provider:', provider);
             console.log('[AUTH] User name:', userName);
             
-            toast.success(`أهلاً بك، ${userName}!`, {
-              description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
-              duration: 4000
-            });
-            
-            console.log('[AUTH] Scheduling redirect to profile in 1s...');
-            // Redirect to profile after sign-in
-            setTimeout(() => {
-              console.log('[AUTH] 🚀 Redirecting to /profile');
-              window.location.href = '/profile';
-            }, 1000);
+            // Don't show toast or redirect if we're on the callback page - let AuthCallback handle it
+            if (window.location.pathname !== '/auth/callback') {
+              toast.success(`أهلاً بك، ${userName}!`, {
+                description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
+                duration: 4000
+              });
+              
+              console.log('[AUTH] Scheduling redirect to profile in 1s...');
+              // Redirect to profile after sign-in
+              setTimeout(() => {
+                console.log('[AUTH] 🚀 Redirecting to /profile');
+                window.location.href = '/profile';
+              }, 1000);
+            }
           }
         } else {
           console.log('[AUTH] ⚠️ No session - user signed out or session expired');
@@ -444,7 +447,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       // Always start OAuth in top window to avoid iframe restrictions and storage partitioning
-      localStorage.removeItem('supabase.auth.token');
       const startUrl = `${window.location.origin}/auth/start?provider=google`;
       if (window.top) {
         window.top.location.href = startUrl;
