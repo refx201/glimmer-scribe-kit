@@ -90,10 +90,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    let mounted = true;
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
+        
+        if (!mounted) return;
         
         // Store session and user
         setSession(session)
@@ -101,7 +105,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // Sync profile from database
         if (session?.user) {
-          await syncProfileWithDatabase(session.user.id, session);
+          // Use setTimeout to defer the profile sync and prevent blocking
+          setTimeout(async () => {
+            if (mounted) {
+              await syncProfileWithDatabase(session.user.id, session);
+            }
+          }, 0);
           
           // Handle successful sign in - show toast only once
           if (event === 'SIGNED_IN') {
@@ -109,14 +118,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const isGoogleSignIn = session.user.app_metadata?.provider === 'google';
             
             // Show welcome message
-            toast.success(`أهلاً بك، ${userName}!`, {
-              description: isGoogleSignIn ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
-              duration: 4000
-            });
+            setTimeout(() => {
+              toast.success(`أهلاً بك، ${userName}!`, {
+                description: isGoogleSignIn ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
+                duration: 4000
+              });
+            }, 100);
             
             // Clean up URL hash after successful OAuth sign in
             if (window.location.hash.includes('access_token')) {
-              window.history.replaceState(null, '', window.location.pathname);
+              setTimeout(() => {
+                window.history.replaceState(null, '', window.location.pathname);
+              }, 500);
             }
           }
         } else {
@@ -129,15 +142,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // THEN get session - this will process URL hash if present
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       if (session) {
         setSession(session)
         setUser(session?.user ?? null)
-        syncProfileWithDatabase(session.user.id, session);
+        // Defer profile sync
+        setTimeout(() => {
+          if (mounted) {
+            syncProfileWithDatabase(session.user.id, session);
+          }
+        }, 0);
       }
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    }
   }, [])
 
 
