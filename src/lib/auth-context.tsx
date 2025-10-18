@@ -444,22 +444,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       console.log('=== [AUTH CONTEXT] Starting Google OAuth flow ===');
+      console.log('[AUTH CONTEXT] Origin:', window.location.origin);
+      console.log('[AUTH CONTEXT] Redirect URL:', `${window.location.origin}/auth/callback`);
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: false,
           queryParams: {
             access_type: 'offline',
-            prompt: 'select_account',
+            prompt: 'consent',
           }
         }
       });
       
       if (error) {
         console.error('[AUTH CONTEXT] Google OAuth error:', error);
+        toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
         throw error;
       }
+      
+      console.log('[AUTH CONTEXT] OAuth initiated, redirecting to:', data.url);
     } catch (error: any) {
       console.error('[AUTH CONTEXT] Google sign in error:', error);
       toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');

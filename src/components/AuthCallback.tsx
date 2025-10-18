@@ -55,34 +55,45 @@ export function AuthCallback() {
           console.log('[AUTH CALLBACK] No OAuth params, attempting exchange anyway');
         }
 
-        console.log('[AUTH CALLBACK] Starting OAuth exchange...');
+        console.log('[AUTH CALLBACK] Attempting to exchange code for session...');
         
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
-        
-        if (exchangeError) {
-          console.error('[AUTH CALLBACK] Exchange error:', exchangeError);
+        try {
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
           
-          // Final session check
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          if (session) {
+          if (exchangeError) {
+            console.error('[AUTH CALLBACK] Exchange error:', exchangeError);
+            console.error('[AUTH CALLBACK] Error details:', {
+              message: exchangeError.message,
+              status: exchangeError.status,
+              name: exchangeError.name
+            });
+            
+            // Check if we already have a session
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session) {
+              console.log('[AUTH CALLBACK] Session found despite exchange error');
+              if (!cancelled) {
+                setStatus('done');
+                toast.success('تم تسجيل الدخول بنجاح');
+                setTimeout(() => (window.location.href = '/profile'), 600);
+              }
+              return;
+            }
+            
             if (!cancelled) {
-              setStatus('done');
-              toast.success('تم تسجيل الدخول بنجاح');
-              setTimeout(() => (window.location.href = '/profile'), 600);
+              setStatus('error');
+              toast.error('رابط غير صالح. حاول تسجيل الدخول مرة أخرى.');
+              setTimeout(() => (window.location.href = '/'), 2000);
             }
             return;
           }
-          
-          if (!cancelled) {
-            setStatus('error');
-            toast.error('تعذّر إكمال تسجيل الدخول. حاول مرة أخرى.');
-            setTimeout(() => (window.location.href = '/'), 1500);
-          }
-          return;
-        }
 
-        console.log('[AUTH CALLBACK] Exchange successful!');
+          console.log('[AUTH CALLBACK] Exchange successful!');
+        } catch (e) {
+          console.error('[AUTH CALLBACK] Exception during exchange:', e);
+          throw e;
+        }
         
         if (!cancelled) {
           setStatus('done');
