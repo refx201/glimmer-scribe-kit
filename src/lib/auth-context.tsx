@@ -138,15 +138,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      const currentPath = window.location.pathname;
-      const redirectTo = currentPath === '/login' || currentPath === '/signup' ? '/' : currentPath;
-      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}${redirectTo}`,
+          redirectTo: 'https://procell.app/',
           queryParams: {
-            prompt: 'select_account',
+            access_type: 'offline',
+            prompt: 'consent',
           }
         }
       });
