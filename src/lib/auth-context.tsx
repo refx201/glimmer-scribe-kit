@@ -267,29 +267,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }, 0);
           
-          // Handle successful sign-in (both OAuth and email/password)
+          // Handle successful sign-in - ONLY for email/password
+          // OAuth sign-in is handled by AuthCallback component
           if (event === 'SIGNED_IN') {
-            const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
             const provider = session.user.app_metadata?.provider;
             
-            console.log('[AUTH] 🎉 Sign in successful!');
-            console.log('[AUTH] Provider:', provider);
-            console.log('[AUTH] User name:', userName);
+            console.log('🎉 [AUTH] Sign in detected');
+            console.log('🔑 [AUTH] Provider:', provider);
             
-            // Don't show toast or redirect if we're on the callback page - let AuthCallback handle it
-            if (window.location.pathname !== '/auth/callback') {
-              toast.success(`أهلاً بك، ${userName}!`, {
-                description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
-                duration: 4000
-              });
-              
-              console.log('[AUTH] Scheduling redirect to profile in 1s...');
-              // Redirect to profile after sign-in
-              setTimeout(() => {
-                console.log('[AUTH] 🚀 Redirecting to /profile');
-                window.location.href = '/profile';
-              }, 1000);
+            // OAuth logins are handled by AuthCallback - don't interfere!
+            if (provider === 'google' || provider === 'apple') {
+              console.log('ℹ️ [AUTH] OAuth login - letting AuthCallback handle redirect');
+              return;
             }
+            
+            // Only handle email/password logins here
+            const userName = session.user.user_metadata?.name || 
+                            session.user.user_metadata?.full_name || 
+                            session.user.email?.split('@')[0] || 
+                            'المستخدم';
+            
+            toast.success(`أهلاً بك، ${userName}!`, {
+              description: 'تم تسجيل الدخول بنجاح',
+              duration: 3000
+            });
+            
+            console.log('🚀 [AUTH] Redirecting to profile...');
+            setTimeout(() => {
+              window.location.href = '/profile';
+            }, 1000);
           }
         } else {
           console.log('[AUTH] ⚠️ No session - user signed out or session expired');
@@ -445,19 +451,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signInWithGoogle = async () => {
-    try {
-      // Always start OAuth in top window to avoid iframe restrictions and storage partitioning
-      const startUrl = `${window.location.origin}/auth/start?provider=google`;
-      if (window.top) {
-        window.top.location.href = startUrl;
-      } else {
-        window.location.href = startUrl;
-      }
-    } catch (error: any) {
-      console.error('[AUTH CONTEXT] Google sign in error:', error);
-      toast.error('حدثت مشكلة في بدء تسجيل الدخول عبر Google');
-      throw error;
-    }
+    // This method is no longer used - GoogleAuthButton handles OAuth directly
+    // Keeping for backward compatibility
+    console.log('⚠️ [AUTH CONTEXT] signInWithGoogle called - use GoogleAuthButton instead');
   }
 
   const signInWithApple = async () => {
