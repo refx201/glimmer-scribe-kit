@@ -163,12 +163,48 @@ export function SuccessPartnerProgram() {
     }
   ];
 
-  const stats = [
-    { number: '200+', label: 'شريك نشط', icon: <Users className="h-5 w-5" /> },
-    { number: '₪25K', label: 'متوسط الدخل الشهري', icon: <DollarSign className="h-5 w-5" /> },
-    { number: '100 ₪', label: 'الحد الأدنى للصرف', icon: <Target className="h-5 w-5" /> },
-    { number: '24', label: 'ساعة مراجعة الطلب', icon: <Clock className="h-5 w-5" /> }
-  ];
+  // Fetch stat boxes from database
+  const { data: stats = [], isLoading: statsLoading } = useQuery({
+    queryKey: ['stat-boxes-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stat_boxes')
+        .select('*')
+        .eq('is_active', true as any)
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching stat boxes:', error);
+        throw error;
+      }
+      console.log('✅ Stat boxes loaded:', data?.length || 0);
+      
+      // Map the data to include icon components
+      return (data || []).map((box: any) => ({
+        number: box.number,
+        label: box.label,
+        icon: getIconComponent(box.icon, box.color)
+      }));
+    },
+  });
+
+  // Helper function to get icon component dynamically
+  const getIconComponent = (iconName: string, color: string) => {
+    const iconProps = { className: `h-5 w-5 ${color}` };
+    const icons: Record<string, JSX.Element> = {
+      'Users': <Users {...iconProps} />,
+      'Percent': <Percent {...iconProps} />,
+      'TrendingUp': <TrendingUp {...iconProps} />,
+      'HeadphonesIcon': <HeadphonesIcon {...iconProps} />,
+      'DollarSign': <DollarSign {...iconProps} />,
+      'Target': <Target {...iconProps} />,
+      'Clock': <Clock {...iconProps} />,
+      'Star': <Star {...iconProps} />,
+      'Award': <Award {...iconProps} />,
+      'CheckCircle': <CheckCircle {...iconProps} />
+    };
+    return icons[iconName] || <Users {...iconProps} />;
+  };
 
   const handleJoinProgram = () => {
     // Replace with your actual Google Form URL
@@ -194,19 +230,31 @@ export function SuccessPartnerProgram() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12 md:mb-16">
-          {stats.map((stat, index) => (
-            <Card key={index} className="text-center border-procell-primary/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-              <CardContent className="p-4 md:p-6">
-                <div className="text-procell-primary mx-auto w-fit mb-2">
-                  {stat.icon}
-                </div>
-                <div className="text-2xl md:text-3xl font-bold text-procell-primary mb-2">{stat.number}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">{stat.label}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {statsLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12 md:mb-16">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="text-center border-procell-primary/20">
+                <CardContent className="p-4 md:p-6">
+                  <div className="h-20 bg-gray-200 animate-pulse rounded"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12 md:mb-16">
+            {stats.map((stat, index) => (
+              <Card key={index} className="text-center border-procell-primary/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <CardContent className="p-4 md:p-6">
+                  <div className="mx-auto w-fit mb-2">
+                    {stat.icon}
+                  </div>
+                  <div className="text-2xl md:text-3xl font-bold text-procell-primary mb-2">{stat.number}</div>
+                  <div className="text-xs md:text-sm text-muted-foreground">{stat.label}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Target Categories */}
         <div className="mb-16">

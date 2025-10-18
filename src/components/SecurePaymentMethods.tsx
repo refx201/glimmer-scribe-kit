@@ -1,11 +1,23 @@
 import { memo } from 'react';
 import { ShieldCheck, Lock, Verified, Heart } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-
-// Import payment method assets
-const palpayLogo = '../assets/40bde209c2063617cd7dc0e28a131725d888ae78.png';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const SecurePaymentMethods = memo(() => {
+  const { data: paymentMethods = [] } = useQuery({
+    queryKey: ['payment-methods-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('payment_method_images')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   return (
     <section className="py-8 bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto px-4 sm:px-6">
@@ -15,28 +27,19 @@ const SecurePaymentMethods = memo(() => {
           </h3>
           
           <div className="flex flex-wrap items-center justify-center gap-6 mb-8">
-            {/* Payment Method Icons */}
-            <div className="flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-blue-100">
-              <div className="text-blue-600 font-bold text-sm">فيزا</div>
-              <div className="h-4 w-px bg-blue-200"></div>
-              <div className="text-orange-500 font-bold text-sm">ماستركارد</div>
-            </div>
-            
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-blue-100">
-              <ImageWithFallback
-                src={palpayLogo}
-                alt="PALPAY"
-                className="h-6 w-auto object-contain"
-              />
-            </div>
-            
-            <div className="text-green-600 font-bold text-sm bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-blue-100">
-              تحويل بنكي
-            </div>
-            
-            <div className="text-purple-600 font-bold text-sm bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-blue-100">
-              دفع عند الاستلام
-            </div>
+            {paymentMethods.map((method) => (
+              <div key={method.id} className="bg-white/80 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-blue-100">
+                {method.image_url ? (
+                  <ImageWithFallback
+                    src={method.image_url}
+                    alt={method.name}
+                    className="h-6 w-auto object-contain"
+                  />
+                ) : (
+                  <div className="font-bold text-sm text-blue-600">{method.name}</div>
+                )}
+              </div>
+            ))}
           </div>
 
           {/* Security Badges */}

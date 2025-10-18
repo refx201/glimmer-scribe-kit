@@ -9,6 +9,7 @@ import { Checkbox } from './ui/checkbox';
 import { Slider } from './ui/slider';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
 import { Skeleton } from './ui/skeleton';
+import * as LucideIcons from 'lucide-react';
 
 import { 
   Smartphone, 
@@ -43,6 +44,8 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useCart } from '../lib/cart-context';
 import { useOffersData } from '../hooks/use-offers-data';
 import { CompactFilterBar } from './CompactFilterBar';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface OffersPageProps {
   onNavigate?: (page: 'product', productId?: string) => void;
@@ -75,6 +78,29 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
     loading, 
     error 
   } = useOffersData();
+
+  // Fetch filter categories from database
+  const { data: filterCategories = [] } = useQuery({
+    queryKey: ['filter-categories-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('product_filter_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const deviceCategories = filterCategories.filter(c => c.type === 'device');
+  const accessoryCategories = filterCategories.filter(c => c.type === 'accessory');
+
+  // Helper to get icon component
+  const getIconComponent = (iconName: string, size: string = 'h-4 w-4') => {
+    const IconComponent = (LucideIcons as any)[iconName] || Smartphone;
+    return <IconComponent className={`${size} ml-1`} />;
+  };
 
   // Filter options - use brands from database
   const brandOptions = brands.map(brand => brand.name);
@@ -342,208 +368,102 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
 
   const renderProductCard = (product: any, isFlash = false, isBundle = false) => (
     <Card 
-      className={`group hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-0 bg-white/90 backdrop-blur-sm overflow-hidden cursor-pointer ${viewMode === 'list' ? 'flex flex-row' : ''}`}
+      className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-200 bg-white overflow-hidden cursor-pointer h-full flex flex-col rounded-2xl"
       onClick={() => onNavigate?.('product', product.id.toString())}
     >
-      <div className={`relative ${viewMode === 'list' ? 'w-48 flex-shrink-0' : ''}`}>
-        {/* Product Image */}
-        <div className={`overflow-hidden ${viewMode === 'list' ? 'h-full' : 'aspect-square'}`}>
-          <ImageWithFallback
-            src={product.image}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          />
-        </div>
+      {/* Product Image */}
+      <div className="relative bg-gray-50 p-4 md:p-10 flex items-center justify-center" style={{ minHeight: '320px' }}>
+        <ImageWithFallback
+          src={product.image}
+          alt={product.name}
+          className="w-auto h-auto object-contain max-h-72 md:max-h-96 max-w-full md:max-w-[85%]"
+        />
+        
+        {/* Discount Badge */}
+        {product.discount > 0 && (
+          <div className="absolute top-3 right-3 z-20">
+            <Badge className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+              -{product.discount}%
+            </Badge>
+          </div>
+        )}
 
-        {/* Badges */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2">
-          {isFlash && (
+        {/* Flash/Bundle Badges */}
+        {isFlash && (
+          <div className="absolute top-3 left-3 z-20">
             <Badge className="bg-red-500 text-white text-xs animate-pulse">
               عرض سريع
             </Badge>
-          )}
-          {product.isDaily && (
-            <Badge className="bg-procell-secondary text-white text-xs">
-              عرض اليوم
-            </Badge>
-          )}
-          {isBundle && (
+          </div>
+        )}
+        {isBundle && (
+          <div className="absolute top-3 left-3 z-20">
             <Badge className="bg-procell-accent text-white text-xs">
               باقة مميزة
             </Badge>
-          )}
-          {product.discount > 0 && (
-            <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold">
-              خصم {product.discount}%
-            </Badge>
-          )}
-        </div>
-
-        {/* Timer for flash deals */}
-        {isFlash && product.timeLeft && (
-          <div className="absolute bottom-3 left-3 bg-black/80 text-white px-2 py-1 rounded text-xs flex items-center">
-            <Timer className="h-3 w-3 mr-1" />
-            {product.timeLeft}
           </div>
         )}
-
-        {/* Stock for flash deals */}
-        {isFlash && product.stock && (
-          <div className="absolute bottom-3 right-3 bg-procell-secondary text-white px-2 py-1 rounded text-xs">
-            متبقي {product.stock}
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        <div className="absolute top-3 left-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button 
-            size="sm" 
-            variant="secondary" 
-            className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
-            onClick={(e) => {
-              e.stopPropagation();
-              // Add to wishlist logic here
-            }}
-          >
-            <Heart className="h-4 w-4" />
-          </Button>
-          <Button 
-            size="sm" 
-            variant="secondary" 
-            className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigate?.('product', product.id.toString());
-            }}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Flash Add to Cart Button */}
-        <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-100 scale-95">
-          <Button 
-            size="sm" 
-            className="bg-gradient-to-r from-procell-accent to-green-600 hover:from-procell-accent/90 hover:to-green-600/90 text-white shadow-lg animate-pulse"
-            onClick={(e) => {
-              e.stopPropagation();
-              addItem({
-                productId: product.id,
-                name: product.name,
-                price: product.price,
-                originalPrice: product.originalPrice || product.price,
-                discount: product.discount || 0,
-                image: product.image,
-                brandId: product.brandId, // Include brand ID for promo codes
-                maxStock: product.stock || 10,
-                quantity: 1
-              });
-            }}
-          >
-            <ShoppingCart className="h-4 w-4 mr-1" />
-            إضافة سريعة
-          </Button>
-        </div>
       </div>
 
-      <CardContent className={`p-4 md:p-6 ${viewMode === 'list' ? 'flex-1' : ''}`}>
-        {/* Brand & Rating */}
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-procell-secondary font-medium">{product.brand}</span>
-          <div className="flex items-center space-x-1">
-            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span className="text-xs text-muted-foreground">{product.rating} ({product.reviews})</span>
-          </div>
-        </div>
-
-        {/* Name */}
-        <h3 className={`font-semibold text-gray-900 mb-2 group-hover:text-procell-primary transition-colors ${viewMode === 'list' ? 'text-lg' : 'text-base md:text-lg'}`}>
+      {/* Product Info */}
+      <CardContent className="p-4 flex-1 flex flex-col bg-white">
+        {/* Product Title */}
+        <h3 className="font-semibold text-base text-gray-900 mb-3 line-clamp-2 min-h-[48px]">
           {product.name}
         </h3>
-
-        {/* Features/Items */}
-        <div className="flex flex-wrap gap-1 mb-3">
-          {isBundle ? (
-            <div className="text-xs text-muted-foreground">
-              {(product.items || []).length} عنصر: {(product.items || []).slice(0, 2).join(', ')}...
-            </div>
-          ) : (
-            (product.features || []).slice(0, 3).map((feature: string, index: number) => (
-              <span key={index} className="text-xs bg-procell-primary/10 text-procell-primary px-2 py-1 rounded">
-                {feature}
-              </span>
-            ))
-          )}
-        </div>
-
-        {/* Price */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex flex-col">
-            <div className="flex items-center space-x-2">
-              <span className="text-lg md:text-xl font-bold text-procell-primary">
-                {product.price.toLocaleString()} ₪
-              </span>
-              {product.originalPrice > product.price && (
-                <span className="text-sm text-muted-foreground line-through">
-                  {product.originalPrice.toLocaleString()} ₪
-                </span>
-              )}
-            </div>
-            {product.savings && (
-              <span className="text-xs text-procell-accent font-medium">
-                وفر {product.savings} ₪
+        
+        {/* Price Section */}
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="text-2xl font-bold text-blue-600">
+              {product.price.toLocaleString()} ₪
+            </span>
+            {product.originalPrice > product.price && (
+              <span className="text-sm text-gray-400 line-through">
+                {product.originalPrice.toLocaleString()} ₪
               </span>
             )}
           </div>
+          {product.originalPrice > product.price && (
+            <div className="text-xs text-gray-600">
+              متوفر بـ 4 دفعات
+            </div>
+          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Button 
-            onClick={(e) => {
-              e.stopPropagation();
-              onNavigate?.('product', product.id.toString());
-            }}
-            variant="outline"
-            className="flex-1 border-procell-primary text-procell-primary hover:bg-procell-primary hover:text-white transform hover:scale-105 transition-all"
-          >
-            <Eye className="h-4 w-4 ml-1" />
-            عرض المنتج
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="border-procell-accent text-procell-accent hover:bg-procell-accent hover:text-white"
-            onClick={(e) => {
-              e.stopPropagation();
-              addItem({
-                productId: product.id,
-                name: product.name,
-                price: product.price,
-                originalPrice: product.originalPrice || product.price,
-                discount: product.discount || 0,
-                image: product.image,
-                brandId: product.brandId, // Include brand ID for promo codes
-                maxStock: product.stock || 10,
-                quantity: 1
-              });
-            }}
-          >
-            <ShoppingCart className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Trust Indicators */}
-        <div className="flex items-center justify-center space-x-4 mt-3 pt-3 border-t border-procell-primary/10">
-          <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-            <Shield className="h-3 w-3 text-procell-accent" />
-            <span>ضمان سنة</span>
+        {/* Stock Progress Bar */}
+        {product.stock && product.stock <= 20 && (
+          <div className="mb-3">
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${Math.min((product.stock / 20) * 100, 100)}%` }}
+              />
+            </div>
           </div>
-          <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-            <Gift className="h-3 w-3 text-procell-secondary" />
-            <span>توصيل مجاني</span>
-          </div>
-        </div>
+        )}
+        
+        {/* Action Button */}
+        <Button 
+          onClick={(e) => {
+            e.stopPropagation();
+            addItem({
+              productId: product.id,
+              name: product.name,
+              price: product.price,
+              originalPrice: product.originalPrice || product.price,
+              discount: product.discount || 0,
+              image: product.image,
+              brandId: product.brandId,
+              maxStock: product.stock || 10,
+              quantity: 1
+            });
+          }}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 mt-auto rounded-lg"
+        >
+          <ShoppingCart className="h-4 w-4 ml-2" />
+          أضف الآن
+        </Button>
       </CardContent>
     </Card>
   );
@@ -852,57 +772,31 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
                 
                 {activeTab === 'devices' ? (
                   <>
-                    <Button 
-                      variant={selectedCategory === 'هواتف ذكية' ? 'default' : 'outline'}
-                      onClick={() => setSelectedCategory('هواتف ذكية')}
-                      className="rounded-full"
-                    >
-                      <Smartphone className="h-4 w-4 ml-1" />
-                      الهواتف الذكية
-                    </Button>
-                    <Button 
-                      variant={selectedCategory === 'تابلت' ? 'default' : 'outline'}
-                      onClick={() => setSelectedCategory('تابلت')}
-                      className="rounded-full"
-                    >
-                      <Tablet className="h-4 w-4 ml-1" />
-                      التابلت
-                    </Button>
+                    {deviceCategories.map((category) => (
+                      <Button 
+                        key={category.id}
+                        variant={selectedCategory === category.name ? 'default' : 'outline'}
+                        onClick={() => setSelectedCategory(category.name)}
+                        className="rounded-full"
+                      >
+                        {getIconComponent(category.icon)}
+                        {category.name}
+                      </Button>
+                    ))}
                   </>
                 ) : (
                   <>
-                    <Button 
-                      variant={selectedCategory === 'سماعات' ? 'default' : 'outline'}
-                      onClick={() => setSelectedCategory('سماعات')}
-                      className="rounded-full"
-                    >
-                      <Headphones className="h-4 w-4 ml-1" />
-                      السماعات
-                    </Button>
-                    <Button 
-                      variant={selectedCategory === 'شواحن' ? 'default' : 'outline'}
-                      onClick={() => setSelectedCategory('شواحن')}
-                      className="rounded-full"
-                    >
-                      <Battery className="h-4 w-4 ml-1" />
-                      الشواحن
-                    </Button>
-                    <Button 
-                      variant={selectedCategory === 'ساعات ذكية' ? 'default' : 'outline'}
-                      onClick={() => setSelectedCategory('ساعات ذكية')}
-                      className="rounded-full"
-                    >
-                      <Watch className="h-4 w-4 ml-1" />
-                      الساعات الذكية
-                    </Button>
-                    <Button 
-                      variant={selectedCategory === 'حافظات' ? 'default' : 'outline'}
-                      onClick={() => setSelectedCategory('حافظات')}
-                      className="rounded-full"
-                    >
-                      <Shield className="h-4 w-4 ml-1" />
-                      الحافظات والحماية
-                    </Button>
+                    {accessoryCategories.map((category) => (
+                      <Button 
+                        key={category.id}
+                        variant={selectedCategory === category.name ? 'default' : 'outline'}
+                        onClick={() => setSelectedCategory(category.name)}
+                        className="rounded-full"
+                      >
+                        {getIconComponent(category.icon)}
+                        {category.name}
+                      </Button>
+                    ))}
                   </>
                 )}
               </div>

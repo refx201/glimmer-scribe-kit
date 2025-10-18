@@ -28,6 +28,9 @@ import AnalyticsDashboard from "@/components/admin/analytics/AnalyticsDashboard"
 import FAQList from "@/components/admin/faq/FAQList";
 import SlidingPhotosList from "@/components/admin/photos/SlidingPhotosList";
 import { ReviewsList } from "@/components/admin/reviews/ReviewsList";
+import { PaymentMethodsList } from "@/components/admin/home/PaymentMethodsList";
+import { StatBoxesList } from "@/components/admin/home/StatBoxesList";
+import { FilterCategoriesList } from "@/components/admin/categories/FilterCategoriesList";
 import { executeSql } from "@/utils/supabaseHelpers";
 import { Package as PackageType } from "@/types/package";
 
@@ -385,6 +388,9 @@ const Admin = () => {
               <TabsTrigger value="email-broadcasts">بث رسالة ايميل (قريبا لا يعمل)</TabsTrigger>
               <TabsTrigger value="join-requests">طلبات الانضمام للفريق</TabsTrigger>
               <TabsTrigger value="news-ticker">الأخبار</TabsTrigger>
+              <TabsTrigger value="payment-methods">طرق الدفع</TabsTrigger>
+              <TabsTrigger value="stat-boxes">صناديق الإحصائيات</TabsTrigger>
+              <TabsTrigger value="filter-categories">فئات الفلاتر</TabsTrigger>
             </TabsList>
           </div>
 
@@ -458,6 +464,18 @@ const Admin = () => {
 
           <TabsContent value="news-ticker">
             <NewsTickerList />
+          </TabsContent>
+
+          <TabsContent value="payment-methods">
+            <PaymentMethodsList />
+          </TabsContent>
+
+          <TabsContent value="stat-boxes">
+            <StatBoxesList />
+          </TabsContent>
+
+          <TabsContent value="filter-categories">
+            <FilterCategoriesList />
           </TabsContent>
         </Tabs>
       </div>

@@ -791,6 +791,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_method_images: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       payment_methods: {
         Row: {
           api_credentials: Json | null
@@ -824,6 +854,39 @@ export type Database = {
           name?: string
           terminal_id?: string | null
           type?: string
+        }
+        Relationships: []
+      }
+      product_filter_categories: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1316,6 +1379,42 @@ export type Database = {
           is_active?: boolean | null
           link?: string | null
           title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      stat_boxes: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          display_order: number | null
+          icon: string
+          id: string
+          is_active: boolean | null
+          label: string
+          number: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          icon: string
+          id?: string
+          is_active?: boolean | null
+          label: string
+          number: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          number?: string
           updated_at?: string | null
         }
         Relationships: []
