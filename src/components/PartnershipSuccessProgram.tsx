@@ -2,7 +2,8 @@ import { memo } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Users, Percent, TrendingUp, Headphones, ArrowRight } from 'lucide-react';
-import { PARTNERSHIP_STATS } from '../lib/data';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export type PageType = 'home' | 'offers' | 'partners' | 'contact' | 'maintenance' | 'trade-in' | 'purchase' | 'about' | 'faq' | 'product' | 'terms' | 'privacy' | 'refund';
 
@@ -18,6 +19,20 @@ const iconMap = {
 };
 
 const PartnershipSuccessProgram = memo(({ onNavigate }: PartnershipSuccessProgramProps) => {
+  // Fetch stat boxes from Supabase
+  const { data: stats = [], isLoading } = useQuery({
+    queryKey: ['partner-stat-boxes-home'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stat_boxes')
+        .select('*')
+        .eq('is_active', true as any)
+        .order('display_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
   return (
     <section className="py-16 bg-gradient-to-br from-gradient-deep-start via-gradient-blue-mid to-gradient-blue-end relative overflow-hidden">
       {/* Enhanced Background Pattern */}
@@ -59,24 +74,33 @@ const PartnershipSuccessProgram = memo(({ onNavigate }: PartnershipSuccessProgra
           </p>
         </div>
 
-        {/* Statistics Cards */}
+        {/* Statistics Cards - from DB */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-12">
-          {PARTNERSHIP_STATS.map((stat, index) => {
-            const IconComponent = iconMap[stat.icon as keyof typeof iconMap];
-            return (
-              <Card key={index} className="bg-white/10 backdrop-blur-sm border border-white/20 text-center p-4 md:p-6 hover:bg-white/15 transition-all duration-300">
-                <div className={`mx-auto w-12 h-12 ${stat.color} rounded-full flex items-center justify-center mb-3`}>
-                  <IconComponent className="h-6 w-6" />
-                </div>
-                <div className={`text-2xl md:text-3xl font-bold ${stat.color} mb-1`}>
-                  {stat.number}
-                </div>
-                <p className="text-white/90 text-sm font-medium">
-                  {stat.label}
-                </p>
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="bg-white/10 backdrop-blur-sm border border-white/20 text-center p-6">
+                <div className="h-16 bg-white/20 animate-pulse rounded" />
               </Card>
-            );
-          })}
+            ))
+          ) : (
+            stats.map((stat: any, index: number) => {
+              const IconComponent = (iconMap as any)[stat.icon] || Users;
+              const colorClass = stat.color || 'text-white';
+              return (
+                <Card key={index} className="bg-white/10 backdrop-blur-sm border border-white/20 text-center p-4 md:p-6 hover:bg-white/15 transition-all duration-300">
+                  <div className={`mx-auto w-12 h-12 ${colorClass} rounded-full flex items-center justify-center mb-3`}>
+                    <IconComponent className="h-6 w-6" />
+                  </div>
+                  <div className={`text-2xl md:text-3xl font-bold ${colorClass} mb-1`}>
+                    {stat.number}
+                  </div>
+                  <p className="text-white/90 text-sm font-medium">
+                    {stat.label}
+                  </p>
+                </Card>
+              );
+            })
+          )}
         </div>
 
         {/* Enhanced CTA Button */}
