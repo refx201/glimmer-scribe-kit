@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useAuth } from '../lib/auth-context';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
-import { FaGoogle, FaApple } from 'react-icons/fa';
+import { GoogleAuthButton } from './GoogleAuthButton';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -130,14 +130,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           <TabsContent value="signin" className="space-y-4">
             <div className="flex justify-center mb-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-12 h-12 rounded-full p-0 flex items-center justify-center hover:bg-blue-50 border-2"
-                onClick={handleGoogleSignIn}
-              >
-                <FaGoogle className="h-5 w-5 text-blue-600" />
-              </Button>
+              <GoogleAuthButton />
             </div>
 
             <div className="relative">
@@ -203,14 +196,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           <TabsContent value="signup" className="space-y-4">
             <div className="flex justify-center mb-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-12 h-12 rounded-full p-0 flex items-center justify-center hover:bg-blue-50 border-2"
-                onClick={handleGoogleSignIn}
-              >
-                <FaGoogle className="h-5 w-5 text-blue-600" />
-              </Button>
+              <GoogleAuthButton />
             </div>
 
             <div className="relative">

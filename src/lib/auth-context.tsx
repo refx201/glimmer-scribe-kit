@@ -26,25 +26,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Function to sync profile with database
   const syncProfileWithDatabase = async (userId: string, session: Session) => {
     try {
-      // First, ensure profile exists in database
+      // First, check if profile exists
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
+      // Create profile if it doesn't exist
       if (!existingProfile && !fetchError) {
-        // Create profile if it doesn't exist
+        const profileData = {
+          id: userId,
+          email: session.user.email,
+          full_name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'مستخدم',
+          display_name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'مستخدم',
+          phone: session.user.user_metadata?.phone || '',
+          phone_number: session.user.user_metadata?.phone || ''
+        };
+
         const { error: insertError } = await supabase
           .from('profiles')
-          .insert({
-            id: userId,
-            email: session.user.email,
-            full_name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email,
-            display_name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email,
-            phone: session.user.user_metadata?.phone || '',
-            phone_number: session.user.user_metadata?.phone || ''
-          });
+          .insert(profileData);
 
         if (insertError) {
           console.error('Error creating profile:', insertError);
@@ -52,28 +54,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Fetch the latest profile data
-      const { data: profile, error } = await supabase
+      const { data: profile } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
 
-      if (error || !profile) {
-        console.error('Error fetching profile:', error);
-        // Fallback to user metadata if database fetch fails
-        setUserProfile({
-          id: userId,
-          email: session.user.email,
-          name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
-          userType: session.user.user_metadata?.userType || 'customer'
-        });
-      } else {
-        // Use database profile
+      if (profile) {
         setUserProfile({
           id: profile.id,
           email: profile.email,
           name: profile.display_name || profile.full_name || 'مستخدم',
           phone: profile.phone || profile.phone_number,
+          userType: session.user.user_metadata?.userType || 'customer'
+        });
+      } else {
+        // Fallback to user metadata
+        setUserProfile({
+          id: userId,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
           userType: session.user.user_metadata?.userType || 'customer'
         });
       }
@@ -95,22 +95,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
         
-        // Store both session and user
+        // Store session and user
         setSession(session)
         setUser(session?.user ?? null)
         
-        // Sync profile from database - do NOT use setTimeout
+        // Sync profile from database
         if (session?.user) {
           await syncProfileWithDatabase(session.user.id, session);
           
-          // Handle successful sign in
+          // Handle successful sign in - show toast only once
           if (event === 'SIGNED_IN') {
-            const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'المستخدم';
+            const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
             const isGoogleSignIn = session.user.app_metadata?.provider === 'google';
             
             // Show welcome message
             toast.success(`أهلاً بك، ${userName}!`, {
-              description: isGoogleSignIn ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح'
+              description: isGoogleSignIn ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
+              duration: 4000
             });
             
             // Clean up URL hash after successful OAuth sign in
@@ -131,7 +132,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         setSession(session)
         setUser(session?.user ?? null)
-        // Sync profile from database
         syncProfileWithDatabase(session.user.id, session);
       }
       setLoading(false)
