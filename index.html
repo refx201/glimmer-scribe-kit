@@ -34,16 +34,22 @@
 
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(async function(OneSignal) {
-        await OneSignal.init({
-          appId: "8093b729-1bcd-4ce7-b9b1-1e68814019e6",
-          safari_web_id: "web.onesignal.auto.1e4cdd3c-fd67-4db9-823a-6a25dd50e774",
-          notifyButton: {
-            enable: true,
-          },
+      (function(){
+        const host = window.location.hostname;
+        const allowed = host === 'procell.app' || host === 'www.procell.app';
+        if (!allowed) {
+          console.info('OneSignal disabled on non-production domain:', host);
+          return; // Avoid init errors outside procell.app
+        }
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+          await OneSignal.init({
+            appId: "8093b729-1bcd-4ce7-b9b1-1e68814019e6",
+            safari_web_id: "web.onesignal.auto.1e4cdd3c-fd67-4db9-823a-6a25dd50e774",
+            notifyButton: { enable: true },
+          });
         });
-      });
+      })();
     </script>
 
     <!-- JSON-LD Structured Data -->
