@@ -290,27 +290,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Initialize auth by checking for existing session
     const initializeAuth = async () => {
       try {
-        // 1) Handle OAuth callback explicitly (Google/Apple)
-        if (typeof window !== 'undefined') {
-          const url = new URL(window.location.href);
-          const hasCode = url.searchParams.has('code');
-          const hasAccessToken = window.location.hash.includes('access_token');
-
-          if (hasCode || hasAccessToken) {
-            console.log('[AUTH] OAuth callback detected. Exchanging code for session...');
-            const { data, error } = await supabase.auth.exchangeCodeForSession(url.toString());
-            if (error) {
-              console.error('[AUTH] exchangeCodeForSession error:', error);
-            } else if (data?.session) {
-              console.log('[AUTH] Session acquired from OAuth callback');
-              // Clean URL (remove code/hash params)
-              const cleanUrl = url.origin + url.pathname;
-              window.history.replaceState({}, document.title, cleanUrl);
-            }
-          }
-        }
-
-        // 2) Check for existing session after potential exchange
+        // Check for existing session (OAuth callback is handled by AuthCallback component)
         console.log('[AUTH] Checking for existing session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         

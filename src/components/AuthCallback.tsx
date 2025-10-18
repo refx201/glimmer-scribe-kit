@@ -12,17 +12,55 @@ export function AuthCallback() {
 
     const run = async () => {
       try {
-        const url = window.location.href;
-        console.log('[AUTH] Callback page loaded with URL:', url);
+        console.log('[AUTH] Callback page loaded');
+        
+        // Check if we have the necessary URL parameters
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get('code');
+        const hasHashParams = url.hash.includes('access_token');
+        
+        if (!code && !hasHashParams) {
+          console.warn('[AUTH] No OAuth code or access token found in URL');
+          if (!cancelled) {
+            // Check if we already have a session (might have been set by previous attempt)
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+              console.log('[AUTH] Existing session found, redirecting to profile');
+              setStatus('done');
+              window.location.href = '/profile';
+              return;
+            }
+            
+            setStatus('error');
+            toast.error('رابط غير صالح. حاول تسجيل الدخول مرة أخرى.');
+            setTimeout(() => (window.location.href = '/'), 1500);
+          }
+          return;
+        }
 
+        console.log('[AUTH] Exchanging OAuth code for session...');
         // Perform the exchange; this will persist the session in storage
-        const { data, error } = await supabase.auth.exchangeCodeForSession(url);
+        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+        
         if (error) {
-          console.error('[AUTH] exchangeCodeForSession error on callback page:', error);
+          console.error('[AUTH] exchangeCodeForSession error:', error);
+          
+          // Check if we somehow got a session despite the error
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log('[AUTH] Session exists despite error, continuing');
+            if (!cancelled) {
+              setStatus('done');
+              toast.success('تم تسجيل الدخول بنجاح');
+              setTimeout(() => (window.location.href = '/profile'), 600);
+            }
+            return;
+          }
+          
           if (!cancelled) {
             setStatus('error');
             toast.error('تعذّر إكمال تسجيل الدخول. حاول مرة أخرى.');
-            setTimeout(() => (window.location.href = '/'), 1200);
+            setTimeout(() => (window.location.href = '/'), 1500);
           }
           return;
         }
@@ -31,6 +69,15 @@ export function AuthCallback() {
         if (!cancelled) {
           setStatus('done');
           toast.success('تم تسجيل الدخول بنجاح');
+          
+          // Clean URL first
+          try {
+            const cleanUrl = url.origin + url.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+          } catch (e) {
+            console.warn('[AUTH] Could not clean URL:', e);
+          }
+          
           setTimeout(() => (window.location.href = '/profile'), 600);
         }
       } catch (e) {
@@ -38,15 +85,8 @@ export function AuthCallback() {
         if (!cancelled) {
           setStatus('error');
           toast.error('حدث خطأ غير متوقع');
-          setTimeout(() => (window.location.href = '/'), 1200);
+          setTimeout(() => (window.location.href = '/'), 1500);
         }
-      } finally {
-        // Clean URL (remove code/hash params) without navigating away if we stayed
-        try {
-          const u = new URL(window.location.href);
-          const clean = u.origin + u.pathname;
-          window.history.replaceState({}, document.title, clean);
-        } catch {}
       }
     };
 
