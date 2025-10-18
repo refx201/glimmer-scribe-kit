@@ -27,82 +27,80 @@ export function AuthCallback() {
           errorDescription: error_description
         });
         
-        // Handle OAuth errors
+        // Handle OAuth errors immediately
         if (error_param) {
           console.error('[AUTH CALLBACK] OAuth error:', error_param);
           if (!cancelled) {
             setStatus('error');
             toast.error(`خطأ في المصادقة: ${error_description || error_param}`);
-            setTimeout(() => window.location.href = '/', 2000);
+            setTimeout(() => (window.location.href = '/'), 2000);
           }
           return;
         }
-        
-        // Check for existing session first
+
+        // 1) If session already exists, we're done
         console.log('[AUTH CALLBACK] Checking for existing session...');
         const { data: { session: existingSession } } = await supabase.auth.getSession();
-        
         if (existingSession) {
           console.log('[AUTH CALLBACK] ✅ Session already exists, redirecting to profile');
           if (!cancelled) {
             setStatus('done');
             toast.success('تم تسجيل الدخول بنجاح');
-            setTimeout(() => window.location.href = '/profile', 600);
-          }
-          return;
-        }
-        
-        // If no code parameter, this is not a valid OAuth callback
-        if (!code) {
-          console.log('[AUTH CALLBACK] No code parameter, redirecting to home');
-          if (!cancelled) {
-            setTimeout(() => window.location.href = '/', 500);
+            setTimeout(() => (window.location.href = '/profile'), 600);
           }
           return;
         }
 
-        // Attempt to exchange the code for a session
-        console.log('[AUTH CALLBACK] Exchanging code for session...');
-        const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        
-        if (exchangeError) {
-          console.error('[AUTH CALLBACK] ❌ Exchange error:', exchangeError);
-          
-          // One more session check in case it succeeded despite error
-          const { data: { session: finalSession } } = await supabase.auth.getSession();
-          
-          if (finalSession) {
-            console.log('[AUTH CALLBACK] ✅ Session found despite error');
+        // 2) If no code and no session, this might be after Supabase removed the code from URL.
+        // We'll wait briefly for the client to finalize the PKCE exchange automatically (detectSessionInUrl=true).
+        const maxWaitMs = 6000;
+        const intervalMs = 300;
+        let waited = 0;
+        let attemptedManualExchange = false;
+
+        while (!cancelled && waited <= maxWaitMs) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            console.log('[AUTH CALLBACK] ✅ Session detected after wait');
             if (!cancelled) {
               setStatus('done');
               toast.success('تم تسجيل الدخول بنجاح');
-              setTimeout(() => window.location.href = '/profile', 600);
+              setTimeout(() => (window.location.href = '/profile'), 600);
             }
             return;
           }
-          
-          // Real error - show message and redirect
-          if (!cancelled) {
-            setStatus('error');
-            toast.error('حدث خطأ في تسجيل الدخول. حاول مرة أخرى.');
-            setTimeout(() => window.location.href = '/', 2000);
+
+          // As a fallback, if we still don't have a session after ~1s and we have a code,
+          // try manual exchange once (covers cases where auto handling didn’t run).
+          if (!attemptedManualExchange && code && waited >= 1000) {
+            attemptedManualExchange = true;
+            console.log('[AUTH CALLBACK] Attempting manual code exchange fallback...');
+            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            if (exchangeError) {
+              console.warn('[AUTH CALLBACK] Manual exchange fallback error:', exchangeError.message);
+            } else {
+              // After a successful manual exchange, loop will detect the session on next iteration
+              console.log('[AUTH CALLBACK] Manual exchange reported success, rechecking session...');
+            }
           }
-          return;
+
+          await new Promise((res) => setTimeout(res, intervalMs));
+          waited += intervalMs;
         }
 
-        console.log('[AUTH CALLBACK] ✅ Exchange successful!');
-        
+        // 3) If we reach here, no session was created
+        console.error('[AUTH CALLBACK] ❌ No session established after waiting');
         if (!cancelled) {
-          setStatus('done');
-          toast.success('تم تسجيل الدخول بنجاح');
-          setTimeout(() => window.location.href = '/profile', 600);
+          setStatus('error');
+          toast.error('تعذر إكمال تسجيل الدخول. حاول مرة أخرى.');
+          setTimeout(() => (window.location.href = '/'), 2000);
         }
       } catch (e: any) {
         console.error('[AUTH CALLBACK] ❌ Unexpected error:', e);
         if (!cancelled) {
           setStatus('error');
           toast.error('حدث خطأ غير متوقع');
-          setTimeout(() => window.location.href = '/', 1500);
+          setTimeout(() => (window.location.href = '/'), 1500);
         }
       }
     };
