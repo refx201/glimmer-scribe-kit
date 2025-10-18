@@ -15,7 +15,6 @@ import {
   TrendingUp,
   Zap,
   ArrowRight,
-  Star,
   Users,
   Award
 } from 'lucide-react';
@@ -23,6 +22,7 @@ import { toast } from 'sonner'
 import { apiCall } from '../lib/supabase';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { StatBoxesSection } from './home/StatBoxesSection';
+import { CustomerTestimonials } from './CustomerTestimonials';
 
 export function TradeInPage() {
   const [loading, setLoading] = useState(false);
@@ -68,30 +68,6 @@ export function TradeInPage() {
     { brand: 'Samsung', model: 'Galaxy S24', estimatedValue: '₪2,200-2,800', image: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200&h=200&fit=crop' },
     { brand: 'iPhone', model: '14', estimatedValue: '₪2,000-2,400', image: 'https://images.unsplash.com/photo-1592286049617-3feb4da2681e?w=200&h=200&fit=crop' },
     { brand: 'Google', model: 'Pixel 8', estimatedValue: '₪1,800-2,200', image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&h=200&fit=crop' }
-  ];
-
-  const testimonials = [
-    {
-      name: 'أحمد محمد',
-      location: 'نابلس',
-      rating: 5,
-      text: 'خدمة الاستبدال كانت ممتازة! حصلت على سعر عادل وتم الاستبدال في نفس اليوم.',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      name: 'سارة أحمد',
-      location: 'رام الله',
-      rating: 5,
-      text: 'سريع وآمن! استبدلت هاتفي القديم وحصلت على iPhone جديد بسعر ممتاز.',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b1ab?w=150&h=150&fit=crop&crop=face'
-    },
-    {
-      name: 'محمد خالد',
-      location: 'الخليل',
-      rating: 5,
-      text: 'عملية سهلة جداً والفريق محترف. أنصح الجميع بخدمة الاستبدال.',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-    }
   ];
 
   const handleSubmitRequest = async (e: React.FormEvent) => {
@@ -429,41 +405,8 @@ export function TradeInPage() {
             </div>
           </div>
 
-          {/* Customer Testimonials */}
-          <div className="space-y-8">
-            <h3 className="text-xl md:text-2xl text-center text-procell-dark">ماذا يقول عملاؤنا؟</h3>
-            <div className="grid md:grid-cols-3 gap-6">
-              {testimonials.map((testimonial, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow border-procell-primary/10">
-                  <CardContent className="p-6 space-y-4">
-                    <div className="flex text-procell-secondary">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-current" />
-                      ))}
-                    </div>
-                    <blockquote className="text-sm text-procell-dark">
-                      "{testimonial.text}"
-                    </blockquote>
-                    <div className="flex items-center space-x-3">
-                      <ImageWithFallback
-                        src={testimonial.avatar}
-                        alt={testimonial.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                      <div>
-                        <div className="text-sm font-medium text-procell-dark">
-                          {testimonial.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {testimonial.location}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
+          {/* Customer Reviews - Managed from Admin */}
+          <CustomerTestimonials />
         </div>
       </section>
     </div>
