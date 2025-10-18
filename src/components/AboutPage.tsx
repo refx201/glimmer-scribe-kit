@@ -489,18 +489,20 @@ export function AboutPage() {
                           <Building className="h-3 w-3 ml-1" />
                           {supplier.category}
                         </Badge>
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                        <div className="flex items-center justify-center gap-3 mb-4">
                           {supplier.logo_url ? (
                             <img
                               src={supplier.logo_url}
                               alt={supplier.name}
-                              className="inline-block h-8 w-auto mr-2"
+                              className="h-20 md:h-24 w-auto object-contain"
                             />
                           ) : (
-                            '🏢 '
+                            <span className="text-4xl">🏢</span>
                           )}
+                        </div>
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
                           {supplier.name}
-                          {supplier.name_en && ` - ${supplier.name_en}`}
+                          {supplier.name_en && <span className="text-gray-600"> - {supplier.name_en}</span>}
                         </h2>
                         <p className="text-lg text-gray-600 max-w-3xl mx-auto">
                           {supplier.description}
@@ -518,22 +520,22 @@ export function AboutPage() {
                                 key={`${brandName}-${brandIndex}`}
                                 className={`bg-white border-2 ${borderColors[index % borderColors.length]} shadow-lg hover:shadow-xl transition-all duration-300`}
                               >
-                                <CardContent className="p-4 text-center">
+                                <CardContent className="p-6 text-center">
                                   <div
-                                    className={`w-12 h-12 ${supplier.logo_color} rounded-full flex items-center justify-center mx-auto mb-3 text-white font-bold text-xs overflow-hidden`}
+                                    className={`w-20 h-20 ${supplier.logo_color} rounded-xl flex items-center justify-center mx-auto mb-4 text-white font-bold text-sm overflow-hidden shadow-lg`}
                                   >
                                     {brandLogo ? (
                                       <img 
                                         src={brandLogo} 
                                         alt={brandName}
-                                        className="w-full h-full object-cover"
+                                        className="w-full h-full object-contain p-2"
                                       />
                                     ) : (
                                       brandName.substring(0, 6)
                                     )}
                                   </div>
-                                  <h3 className="font-bold text-sm text-gray-900 mb-1">{brandName}</h3>
-                                  <p className="text-gray-600 text-xs">
+                                  <h3 className="font-bold text-base text-gray-900 mb-2">{brandName}</h3>
+                                  <p className="text-gray-600 text-sm">
                                     نشتري من {supplier.name}
                                   </p>
                                 </CardContent>
