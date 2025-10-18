@@ -64,11 +64,11 @@ const CompactProductCard = memo(({ product, onNavigate }: CompactProductCardProp
       onClick={handleNavigateToProduct}
     >
       {/* Product Image */}
-      <div className="relative bg-gray-50 p-10 flex items-center justify-center" style={{ minHeight: '300px' }}>
+      <div className="relative bg-gray-50 p-4 md:p-10 flex items-center justify-center" style={{ minHeight: '320px' }}>
         <ImageLoader
           src={getOptimizedImageUrl(product.image || '', 300, 400)}
           alt={product.name}
-          className="w-auto h-auto object-contain max-h-56 max-w-[85%]"
+          className="w-auto h-auto object-contain max-h-72 md:max-h-56 max-w-full md:max-w-[85%]"
           fallbackSrc={getProductImageFallback('هواتف ذكية')}
         />
         
