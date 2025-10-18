@@ -24,40 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Process OAuth redirect if hash params exist
-    const processOAuthRedirect = async () => {
-      if (window.location.hash && window.location.hash.includes('access_token')) {
-        try {
-          console.log("Processing OAuth redirect with hash params");
-          
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const accessToken = hashParams.get('access_token');
-          
-          if (!accessToken) {
-            throw new Error("No access token found in URL");
-          }
-          
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: hashParams.get('refresh_token') || "",
-          });
-          
-          if (error) throw error;
-          
-          if (data.session) {
-            console.log("Successfully established session after OAuth redirect");
-            window.history.replaceState(null, "", window.location.pathname);
-          }
-        } catch (error) {
-          console.error("Error processing OAuth redirect:", error);
-          toast.error('فشل إكمال تسجيل الدخول عبر Google');
-        }
-      }
-    };
-
-    processOAuthRedirect();
-
-    // Set up auth state listener FIRST (before checking for existing session)
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
@@ -84,11 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             toast.success(`أهلاً بك، ${userName}!`, {
               description: isGoogleSignIn ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح'
             });
-            
-            // Clean up OAuth hash from URL if present
-            if (window.location.hash.includes('access_token')) {
-              window.history.replaceState({}, document.title, window.location.pathname);
-            }
           }
         } else {
           setUserProfile(null)
