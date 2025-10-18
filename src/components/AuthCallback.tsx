@@ -46,7 +46,7 @@ export function AuthCallback() {
           if (!cancelled) {
             setStatus('done');
             toast.success('تم تسجيل الدخول بنجاح');
-            setTimeout(() => (window.location.href = '/profile'), 600);
+            setTimeout(() => (window.top ? (window.top.location.href = '/profile') : (window.location.href = '/profile')), 600);
           }
           return;
         }
@@ -65,7 +65,7 @@ export function AuthCallback() {
             if (!cancelled) {
               setStatus('done');
               toast.success('تم تسجيل الدخول بنجاح');
-              setTimeout(() => (window.location.href = '/profile'), 600);
+              setTimeout(() => (window.top ? (window.top.location.href = '/profile') : (window.location.href = '/profile')), 600);
             }
             return;
           }
@@ -93,14 +93,14 @@ export function AuthCallback() {
         if (!cancelled) {
           setStatus('error');
           toast.error('تعذر إكمال تسجيل الدخول. حاول مرة أخرى.');
-          setTimeout(() => (window.location.href = '/'), 2000);
+           setTimeout(() => (window.top ? (window.top.location.href = '/') : (window.location.href = '/')), 2000);
         }
       } catch (e: any) {
         console.error('[AUTH CALLBACK] ❌ Unexpected error:', e);
         if (!cancelled) {
           setStatus('error');
           toast.error('حدث خطأ غير متوقع');
-          setTimeout(() => (window.location.href = '/'), 1500);
+          setTimeout(() => (window.top ? (window.top.location.href = '/') : (window.location.href = '/')), 1500);
         }
       }
     };

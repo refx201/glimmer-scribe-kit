@@ -9,6 +9,7 @@ import { CustomerTestimonials } from './components/CustomerTestimonials';
 import { SEOHead } from './components/SEOHead';
 import { NavigationManager } from './components/NavigationManager';
 import { AuthCallback } from './components/AuthCallback';
+import { AuthStart } from './components/AuthStart';
 import { NetworkStatus, ServerStatusIndicator } from './components/NetworkStatus';
 
 // UI Components
@@ -430,6 +431,7 @@ function ProCellApp() {
               <ProfilePage onNavigate={navigateToPage} />
             </Suspense>
           } />
+          <Route path="/auth/start" element={<AuthStart />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="*" element={<HomePage onNavigate={navigateToPage} />} />
         </Routes>

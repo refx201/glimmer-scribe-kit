@@ -443,41 +443,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      console.log('=== [AUTH CONTEXT] Starting Google OAuth flow ===');
-      console.log('[AUTH CONTEXT] Origin:', window.location.origin);
-      
-      // Clear any existing failed flow states
+      // Always start OAuth in top window to avoid iframe restrictions and storage partitioning
       localStorage.removeItem('supabase.auth.token');
-      
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      console.log('[AUTH CONTEXT] Redirect URL:', redirectUrl);
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: false,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account',
-          }
-        }
-      });
-      
-      if (error) {
-        console.error('[AUTH CONTEXT] Google OAuth error:', error);
-        toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
-        throw error;
-      }
-      
-      if (data?.url) {
-        console.log('[AUTH CONTEXT] OAuth URL generated, redirecting...');
-        // Force immediate redirect
-        window.location.href = data.url;
+      const startUrl = `${window.location.origin}/auth/start?provider=google`;
+      if (window.top) {
+        window.top.location.href = startUrl;
+      } else {
+        window.location.href = startUrl;
       }
     } catch (error: any) {
       console.error('[AUTH CONTEXT] Google sign in error:', error);
-      toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
+      toast.error('حدثت مشكلة في بدء تسجيل الدخول عبر Google');
       throw error;
     }
   }
