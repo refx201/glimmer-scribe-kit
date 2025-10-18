@@ -233,9 +233,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     
     // Set up auth state listener FIRST (critical for OAuth)
+    console.log('[AUTH] Setting up auth state listener...');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('[AUTH] State change event:', event, session?.user?.email);
+        console.log('=== [AUTH] State change detected ===');
+        console.log('[AUTH] Event:', event);
+        console.log('[AUTH] Timestamp:', new Date().toISOString());
+        console.log('[AUTH] Session details:', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email,
+          provider: session?.user?.app_metadata?.provider,
+          expiresAt: session?.expires_at
+        });
         
         if (!mounted) return;
         
@@ -243,11 +253,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log('[AUTH] User session active, syncing profile...');
+          console.log('[AUTH] ✅ User session active');
+          console.log('[AUTH] User metadata:', session.user.user_metadata);
+          console.log('[AUTH] App metadata:', session.user.app_metadata);
+          console.log('[AUTH] Starting profile sync in background...');
+          
           // Sync profile in background
           setTimeout(async () => {
             if (mounted) {
+              console.log('[AUTH] Executing profile sync...');
               await syncProfileWithDatabase(session.user.id, session);
+              console.log('[AUTH] Profile sync completed');
             }
           }, 0);
           
@@ -256,19 +272,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
             const provider = session.user.app_metadata?.provider;
             
-            console.log('[AUTH] Sign in successful, provider:', provider);
+            console.log('[AUTH] 🎉 Sign in successful!');
+            console.log('[AUTH] Provider:', provider);
+            console.log('[AUTH] User name:', userName);
             
             toast.success(`أهلاً بك، ${userName}!`, {
               description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
               duration: 4000
             });
             
+            console.log('[AUTH] Scheduling redirect to profile in 1s...');
             // Redirect to profile after sign-in
             setTimeout(() => {
+              console.log('[AUTH] 🚀 Redirecting to /profile');
               window.location.href = '/profile';
             }, 1000);
           }
         } else {
+          console.log('[AUTH] ⚠️ No session - user signed out or session expired');
           setUserProfile(null);
           setUserRoles([]);
 
@@ -290,29 +311,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Initialize auth by checking for existing session
     const initializeAuth = async () => {
       try {
+        console.log('=== [AUTH] Initializing authentication ===');
+        console.log('[AUTH] Timestamp:', new Date().toISOString());
+        console.log('[AUTH] Current URL:', window.location.href);
+        console.log('[AUTH] Pathname:', window.location.pathname);
+        
         // Check for existing session (OAuth callback is handled by AuthCallback component)
         console.log('[AUTH] Checking for existing session...');
+        const sessionCheckStart = Date.now();
         const { data: { session }, error } = await supabase.auth.getSession();
+        const sessionCheckDuration = Date.now() - sessionCheckStart;
+        
+        console.log('[AUTH] Session check completed in:', sessionCheckDuration, 'ms');
+        console.log('[AUTH] Session result:', {
+          hasSession: !!session,
+          hasError: !!error,
+          errorMessage: error?.message,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email
+        });
         
         if (error) {
-          console.error('[AUTH] Error getting session:', error);
+          console.error('[AUTH] ❌ Error getting session:', {
+            message: error.message,
+            status: error.status,
+            name: error.name
+          });
         }
         
-        if (!mounted) return;
+        if (!mounted) {
+          console.log('[AUTH] ⚠️ Component unmounted, skipping initialization');
+          return;
+        }
         
         if (session) {
-          console.log('[AUTH] Existing session found:', session.user.email);
+          console.log('[AUTH] ✅ Existing session found');
+          console.log('[AUTH] User email:', session.user.email);
+          console.log('[AUTH] User ID:', session.user.id);
+          console.log('[AUTH] Provider:', session.user.app_metadata?.provider);
+          
           setSession(session);
           setUser(session.user);
+          
+          console.log('[AUTH] Syncing profile with database...');
           await syncProfileWithDatabase(session.user.id, session);
+          console.log('[AUTH] Profile sync completed');
         } else {
-          console.log('[AUTH] No existing session');
+          console.log('[AUTH] ℹ️ No existing session found');
         }
         
         setLoading(false);
-        console.log('[AUTH] Initialization complete');
+        console.log('[AUTH] ✅ Initialization complete');
       } catch (error) {
-        console.error('[AUTH] Critical error during initialization:', error);
+        console.error('[AUTH] ❌ Critical error during initialization:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
         if (mounted) {
           setLoading(false);
           toast.error('حدث خطأ في تسجيل الدخول');
@@ -388,26 +443,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      console.log('[AUTH] Starting Google sign in...');
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log('=== [AUTH CONTEXT] Starting Google OAuth flow ===');
+      console.log('[AUTH CONTEXT] Timestamp:', new Date().toISOString());
+      console.log('[AUTH CONTEXT] Current location:', window.location.href);
+      console.log('[AUTH CONTEXT] Origin:', window.location.origin);
+      
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('[AUTH CONTEXT] Redirect URL:', redirectUrl);
+      console.log('[AUTH CONTEXT] Supabase URL:', 'https://npbblbwuoaqcsysrzjiq.supabase.co');
+      
+      console.log('[AUTH CONTEXT] Calling supabase.auth.signInWithOAuth...');
+      const oauthStartTime = Date.now();
+      
+      const { error, data } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
           },
+          skipBrowserRedirect: false
         }
-      })
+      });
+      
+      const oauthDuration = Date.now() - oauthStartTime;
+      console.log('[AUTH CONTEXT] OAuth call completed in:', oauthDuration, 'ms');
+      console.log('[AUTH CONTEXT] OAuth response:', {
+        hasError: !!error,
+        hasData: !!data,
+        url: data?.url,
+        provider: data?.provider
+      });
+      
       if (error) {
-        console.error('[AUTH] Google OAuth error:', error);
+        console.error('[AUTH CONTEXT] ❌ Google OAuth error:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+          stack: error.stack
+        });
         throw error;
       }
-      console.log('[AUTH] Google OAuth redirect initiated');
+      
+      console.log('[AUTH CONTEXT] ✅ Google OAuth redirect initiated');
+      console.log('[AUTH CONTEXT] Redirect URL:', data?.url);
+      console.log('[AUTH CONTEXT] Browser should redirect to Google now...');
     } catch (error) {
-      console.error('[AUTH] Google sign in error:', error)
+      console.error('[AUTH CONTEXT] ❌ Google sign in error:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
-      throw error
+      throw error;
     }
   }
 

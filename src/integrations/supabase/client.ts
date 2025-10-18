@@ -8,6 +8,17 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+console.log('=== [SUPABASE CLIENT] Initializing ===');
+console.log('[SUPABASE CLIENT] URL:', SUPABASE_URL);
+console.log('[SUPABASE CLIENT] Key (first 20 chars):', SUPABASE_PUBLISHABLE_KEY.substring(0, 20) + '...');
+console.log('[SUPABASE CLIENT] Auth config:', {
+  storage: 'localStorage',
+  persistSession: true,
+  autoRefreshToken: true,
+  detectSessionInUrl: true,
+  flowType: 'pkce'
+});
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
@@ -17,3 +28,5 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     flowType: 'pkce'
   }
 });
+
+console.log('[SUPABASE CLIENT] ✅ Client initialized successfully');

@@ -7,9 +7,22 @@ export function GoogleAuthButton() {
 
   const handleGoogleSignIn = async () => {
     try {
+      console.log('=== [GOOGLE AUTH BUTTON] Click detected ===');
+      console.log('[GOOGLE AUTH BUTTON] Timestamp:', new Date().toISOString());
+      console.log('[GOOGLE AUTH BUTTON] Current URL:', window.location.href);
+      console.log('[GOOGLE AUTH BUTTON] Origin:', window.location.origin);
+      console.log('[GOOGLE AUTH BUTTON] Calling signInWithGoogle()...');
+      
       await signInWithGoogle();
+      
+      console.log('[GOOGLE AUTH BUTTON] ✅ signInWithGoogle completed (redirect should happen)');
     } catch (error: any) {
-      console.error('Google sign in error:', error);
+      console.error('[GOOGLE AUTH BUTTON] ❌ Error:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        fullError: error
+      });
       toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
     }
   };
