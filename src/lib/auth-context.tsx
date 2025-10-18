@@ -25,13 +25,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Function to sync profile with database
   const syncProfileWithDatabase = async (userId: string, session: Session) => {
+    console.log('[AUTH] Starting profile sync for user:', userId);
+    console.log('[AUTH] Session provider:', session.user.app_metadata?.provider);
+    console.log('[AUTH] User metadata:', session.user.user_metadata);
+    
     try {
       // First, check if profile exists
+      console.log('[AUTH] Checking for existing profile...');
       const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
+
+      if (fetchError) {
+        console.error('[AUTH] Error fetching profile:', fetchError);
+      } else {
+        console.log('[AUTH] Existing profile:', existingProfile ? 'found' : 'not found');
+      }
 
       // Create profile if it doesn't exist
       if (!existingProfile && !fetchError) {
@@ -44,48 +55,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           phone_number: session.user.user_metadata?.phone || ''
         };
 
+        console.log('[AUTH] Creating new profile:', profileData);
         const { error: insertError } = await supabase
           .from('profiles')
           .insert(profileData);
 
         if (insertError) {
-          console.error('Error creating profile:', insertError);
+          console.error('[AUTH] Error creating profile:', insertError);
+        } else {
+          console.log('[AUTH] Profile created successfully');
         }
       }
 
       // Fetch the latest profile data
-      const { data: profile } = await supabase
+      console.log('[AUTH] Fetching latest profile data...');
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
+      if (profileError) {
+        console.error('[AUTH] Error fetching profile:', profileError);
+      }
+
       if (profile) {
-        setUserProfile({
+        console.log('[AUTH] Profile data retrieved:', profile);
+        const userProfileData = {
           id: profile.id,
           email: profile.email,
           name: profile.display_name || profile.full_name || 'مستخدم',
           phone: profile.phone || profile.phone_number,
-          userType: session.user.user_metadata?.userType || 'customer'
-        });
+          userType: 'customer' // Always default to customer for OAuth users
+        };
+        console.log('[AUTH] Setting user profile:', userProfileData);
+        setUserProfile(userProfileData);
       } else {
-        // Fallback to user metadata
-        setUserProfile({
+        console.log('[AUTH] No profile found, using metadata fallback');
+        const fallbackProfile = {
           id: userId,
           email: session.user.email,
           name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
-          userType: session.user.user_metadata?.userType || 'customer'
-        });
+          userType: 'customer'
+        };
+        console.log('[AUTH] Fallback profile:', fallbackProfile);
+        setUserProfile(fallbackProfile);
       }
     } catch (error) {
-      console.error('Error syncing profile:', error);
+      console.error('[AUTH] Critical error syncing profile:', error);
       // Fallback to user metadata on any error
-      setUserProfile({
+      const errorFallback = {
         id: userId,
         email: session.user.email,
         name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
-        userType: session.user.user_metadata?.userType || 'customer'
-      });
+        userType: 'customer'
+      };
+      console.log('[AUTH] Error fallback profile:', errorFallback);
+      setUserProfile(errorFallback);
     }
   };
 
@@ -101,30 +127,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const hasAuthCallback = hashParams.has('access_token') || hashParams.has('code');
         
         if (hasAuthCallback) {
-          console.log('Processing OAuth callback...');
+          console.log('[AUTH] Detected OAuth callback in URL');
           isProcessingOAuth = true;
           // Give Supabase time to process the OAuth callback
           await new Promise(resolve => setTimeout(resolve, 200));
         }
         
         // Get current session (will detect OAuth tokens automatically)
+        console.log('[AUTH] Fetching session...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error getting session:', error);
+          console.error('[AUTH] Error getting session:', error);
+        } else {
+          console.log('[AUTH] Session retrieved:', session ? {
+            user: session.user.email,
+            provider: session.user.app_metadata?.provider,
+            hasMetadata: !!session.user.user_metadata
+          } : 'null');
         }
         
-        if (!mounted) return;
+        if (!mounted) {
+          console.log('[AUTH] Component unmounted, skipping session setup');
+          return;
+        }
         
         if (session) {
-          console.log('Session established:', session.user.email);
+          console.log('[AUTH] Setting session state for:', session.user.email);
           setSession(session);
           setUser(session.user);
           
           // Sync profile in background
+          console.log('[AUTH] Scheduling profile sync...');
           setTimeout(async () => {
             if (mounted) {
+              console.log('[AUTH] Executing profile sync...');
               await syncProfileWithDatabase(session.user.id, session);
+              console.log('[AUTH] Profile sync completed');
+            } else {
+              console.log('[AUTH] Component unmounted, skipping profile sync');
             }
           }, 0);
           
@@ -133,6 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
             const provider = session.user.app_metadata?.provider;
             
+            console.log('[AUTH] Showing welcome message for OAuth login');
             setTimeout(() => {
               toast.success(`أهلاً بك، ${userName}!`, {
                 description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
@@ -142,14 +184,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             // Clean up URL after OAuth
             setTimeout(() => {
+              console.log('[AUTH] Cleaning up OAuth URL parameters');
               window.history.replaceState(null, '', window.location.pathname);
             }, 500);
           }
+        } else {
+          console.log('[AUTH] No session found');
         }
         
         setLoading(false);
+        console.log('[AUTH] Initialization complete');
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('[AUTH] Critical error during initialization:', error);
         if (mounted) setLoading(false);
       }
     };
