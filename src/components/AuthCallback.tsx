@@ -38,12 +38,29 @@ export function AuthCallback() {
           return;
         }
 
-        // 1) Check if we have a code to exchange
+        // 1) First, check if session already exists
+        console.log('[AUTH CALLBACK] Checking for existing session...');
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (existingSession) {
+          console.log('[AUTH CALLBACK] ✅ Session already exists, redirecting to profile');
+          if (!cancelled) {
+            const userName = existingSession.user.user_metadata?.name || 
+                            existingSession.user.user_metadata?.full_name || 
+                            existingSession.user.email?.split('@')[0] || 
+                            'المستخدم';
+            setStatus('done');
+            toast.success(`أهلاً بك، ${userName}!`);
+            setTimeout(() => (window.location.href = '/profile'), 600);
+          }
+          return;
+        }
+
+        // 2) Check if we have a code to exchange
         if (!code) {
-          console.error('[AUTH CALLBACK] ❌ No OAuth code found in URL');
+          console.error('[AUTH CALLBACK] ❌ No OAuth code found in URL and no existing session');
           if (!cancelled) {
             setStatus('error');
-            toast.error('خطأ في رابط المصادقة');
+            toast.error('خطأ في رابط المصادقة. يرجى المحاولة مرة أخرى.');
             setTimeout(() => (window.location.href = '/'), 2000);
           }
           return;
@@ -51,7 +68,7 @@ export function AuthCallback() {
 
         console.log('[AUTH CALLBACK] Found OAuth code, exchanging for session...');
         
-        // 2) Exchange the code for a session immediately
+        // 3) Exchange the code for a session immediately
         const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         
         if (exchangeError) {
@@ -74,7 +91,7 @@ export function AuthCallback() {
           return;
         }
 
-        // 3) Session established successfully
+        // 4) Session established successfully
         console.log('[AUTH CALLBACK] ✅ Session established successfully');
         console.log('[AUTH CALLBACK] User:', exchangeData.session.user.email);
         
