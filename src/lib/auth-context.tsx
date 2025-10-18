@@ -23,24 +23,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+  // Function to sync profile with database
+  const syncProfileWithDatabase = async (userId: string, session: Session) => {
+    try {
+      // First, ensure profile exists in database
+      const { data: existingProfile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (!existingProfile && !fetchError) {
+        // Create profile if it doesn't exist
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            email: session.user.email,
+            full_name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email,
+            display_name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email,
+            phone: session.user.user_metadata?.phone || '',
+            phone_number: session.user.user_metadata?.phone || ''
+          });
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+        }
+      }
+
+      // Fetch the latest profile data
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        // Fallback to user metadata if database fetch fails
+        setUserProfile({
+          id: userId,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
+          userType: session.user.user_metadata?.userType || 'customer'
+        });
+      } else {
+        // Use database profile
+        setUserProfile({
+          id: profile.id,
+          email: profile.email,
+          name: profile.display_name || profile.full_name || 'مستخدم',
+          phone: profile.phone || profile.phone_number,
+          userType: session.user.user_metadata?.userType || 'customer'
+        });
+      }
+    } catch (error) {
+      console.error('Error syncing profile:', error);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
         
         // Store both session and user
         setSession(session)
         setUser(session?.user ?? null)
         
-        // Set basic profile from user metadata
+        // Sync profile from database
         if (session?.user) {
-          setUserProfile({
-            id: session.user.id,
-            email: session.user.email,
-            name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
-            userType: session.user.user_metadata?.userType || 'customer'
-          })
+          // Use setTimeout to defer database calls
+          setTimeout(() => {
+            syncProfileWithDatabase(session.user.id, session);
+          }, 0);
           
           // Handle successful sign in
           if (event === 'SIGNED_IN') {
@@ -70,12 +127,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         setSession(session)
         setUser(session?.user ?? null)
-        setUserProfile({
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
-          userType: session.user.user_metadata?.userType || 'customer'
-        })
+        // Sync profile from database
+        syncProfileWithDatabase(session.user.id, session);
       }
       setLoading(false)
     })

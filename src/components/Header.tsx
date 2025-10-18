@@ -423,21 +423,45 @@ function HeaderContent({ currentPage, onNavigate }: HeaderProps) {
             {user ? (
               <div className="hidden sm:flex items-center gap-2">
                 <UserPointsBadge />
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg">
-                  <User className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-700 max-w-20 truncate">
-                    {user.user_metadata?.name || user.email?.split('@')[0]}
-                  </span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSignOut}
-                  className="text-gray-600 hover:text-red-600 hover:bg-red-50"
-                  disabled={loading}
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg hover:bg-blue-100"
+                    >
+                      <User className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-700 max-w-20 truncate">
+                        {user.user_metadata?.name || user.email?.split('@')[0]}
+                      </span>
+                      <ChevronDown className="h-3 w-3 text-blue-600" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-56 p-2" align="end">
+                    <div className="space-y-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleNavigation('profile')}
+                        className="w-full justify-start gap-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                      >
+                        <User className="h-4 w-4" />
+                        الملف الشخصي
+                      </Button>
+                      <div className="border-t my-1" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSignOut}
+                        className="w-full justify-start gap-2 text-gray-700 hover:text-red-600 hover:bg-red-50"
+                        disabled={loading}
+                      >
+                        <LogOut className="h-4 w-4" />
+                        تسجيل الخروج
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             ) : (
               <Button
@@ -661,6 +685,14 @@ function HeaderContent({ currentPage, onNavigate }: HeaderProps) {
                                <div className="text-xs text-gray-500">{user.email}</div>
                              </div>
                            </div>
+                           <Button
+                             onClick={() => handleNavigation('profile')}
+                             variant="outline"
+                             className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
+                           >
+                             <User className="h-4 w-4 ml-2" />
+                             الملف الشخصي
+                           </Button>
                            <Button
                              onClick={handleSignOut}
                              variant="outline"

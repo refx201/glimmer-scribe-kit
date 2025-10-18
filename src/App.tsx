@@ -58,6 +58,7 @@ const AdminPage = lazy(() => import('./components/admin/Admin').then(module => (
 const PromoCodeOrdersPage = lazy(() => import('./components/PromoCodeOrdersPage').then(module => ({ default: module.default })));
 const RepairCodeRedeemPage = lazy(() => import('./components/RepairCodeRedeemPage').then(module => ({ default: module.default })));
 const PackageDetailPage = lazy(() => import('./components/PackageDetailPage').then(module => ({ default: module.default })));
+const ProfilePage = lazy(() => import('./components/ProfilePage').then(module => ({ default: module.ProfilePage })));
 
 // Lazy load complex sections
 const CompactLightningDeals = lazy(() => import('./components/CompactLightningDeals').then(module => ({ default: module.CompactLightningDeals })));
@@ -68,7 +69,7 @@ const CustomOrderForm = lazy(() => import('./components/CustomOrderForm').then(m
 // TYPE DEFINITIONS
 // ===================================
 
-export type PageType = 'home' | 'offers' | 'partners' | 'contact' | 'maintenance' | 'trade-in' | 'purchase' | 'about' | 'faq' | 'product' | 'terms' | 'privacy' | 'refund' | 'tracking' | 'admin';
+export type PageType = 'home' | 'offers' | 'partners' | 'contact' | 'maintenance' | 'trade-in' | 'purchase' | 'about' | 'faq' | 'product' | 'terms' | 'privacy' | 'refund' | 'tracking' | 'admin' | 'profile';
 
 // ===================================
 // LOADING FALLBACK COMPONENT
@@ -214,6 +215,7 @@ function ProCellApp() {
     const path = location.pathname;
     if (path === '/') return 'home';
     if (path === '/admin') return 'admin';
+    if (path === '/profile') return 'profile';
     if (path === '/offers') return 'offers';
     if (path === '/partners') return 'partners';
     if (path === '/contact') return 'contact';
@@ -272,6 +274,7 @@ function ProCellApp() {
     
     switch (page) {
       case 'home': path = '/'; break;
+      case 'profile': path = '/profile'; break;
       case 'offers': path = '/offers'; break;
       case 'partners': path = '/partners'; break;
       case 'contact': path = '/contact'; break;
@@ -419,6 +422,11 @@ function ProCellApp() {
           <Route path="/package/:id" element={
             <Suspense fallback={<PageLoader />}>
               <PackageDetailPage />
+            </Suspense>
+          } />
+          <Route path="/profile" element={
+            <Suspense fallback={<PageLoader />}>
+              <ProfilePage onNavigate={navigateToPage} />
             </Suspense>
           } />
           <Route path="*" element={<HomePage onNavigate={navigateToPage} />} />
