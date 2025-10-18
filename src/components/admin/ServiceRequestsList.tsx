@@ -27,10 +27,11 @@ export function ServiceRequestsList() {
       const { data, error } = await supabase
         .from('service_requests')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .returns<ServiceRequest[]>();
 
       if (error) throw error;
-      setRequests(data || []);
+      setRequests(data ?? []);
     } catch (error: any) {
       console.error('Error fetching service requests:', error);
       toast.error('فشل تحميل طلبات الخدمات');
@@ -45,10 +46,10 @@ export function ServiceRequestsList() {
 
   const updateStatus = async (id: string, newStatus: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('service_requests')
-        .update({ status: newStatus })
-        .eq('id', id);
+        .update({ status: newStatus } as any)
+        .eq('id' as any, id as any);
 
       if (error) throw error;
       

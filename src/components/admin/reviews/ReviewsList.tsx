@@ -36,15 +36,14 @@ export function ReviewsList() {
   const { data: reviews, isLoading } = useQuery({
     queryKey: ["admin-reviews"],
     queryFn: async () => {
-      // Fetch base reviews first (avoid relationship errors without FKs)
       const { data: baseReviews, error } = await supabase
         .from("reviews")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .returns<Review[]>();
 
       if (error) throw error;
-
-      const base = (baseReviews || []) as Review[];
+      const base = (baseReviews ?? []) as Review[];
 
       // Collect IDs to hydrate product and user info
       const productIds = Array.from(new Set(base.map(r => r.product_id).filter(Boolean)));
@@ -54,10 +53,10 @@ export function ReviewsList() {
       let profileMap: Record<string, { display_name: string | null; full_name: string | null; email: string | null }> = {};
 
       if (productIds.length > 0) {
-        const { data: productsData } = await supabase
+        const { data: productsData } = await (supabase as any)
           .from("products")
           .select("id, name")
-          .in("id", productIds as string[]);
+          .in("id", productIds as any);
 
         productsData?.forEach((p: any) => {
           productMap[p.id] = { name: p.name };
@@ -65,10 +64,10 @@ export function ReviewsList() {
       }
 
       if (userIds.length > 0) {
-        const { data: profilesData } = await supabase
+        const { data: profilesData } = await (supabase as any)
           .from("profiles")
           .select("id, display_name, full_name, email")
-          .in("id", userIds as string[]);
+          .in("id", userIds as any);
 
         profilesData?.forEach((p: any) => {
           profileMap[p.id] = { display_name: p.display_name, full_name: p.full_name, email: p.email };
@@ -88,10 +87,10 @@ export function ReviewsList() {
 
   const deleteMutation = useMutation({
     mutationFn: async (reviewId: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("reviews")
         .delete()
-        .eq("id", reviewId);
+        .eq("id", reviewId as any);
 
       if (error) throw error;
     },

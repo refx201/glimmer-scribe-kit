@@ -120,17 +120,17 @@ export function SupplierDialog({
       };
 
       if (supplier) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('suppliers')
-          .update(dataToSubmit)
-          .eq('id', supplier.id);
+          .update(dataToSubmit as any)
+          .eq('id' as any, supplier.id as any);
 
         if (error) throw error;
         toast({ title: 'تم تحديث المورد بنجاح!' });
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('suppliers')
-          .insert([dataToSubmit]);
+          .insert([dataToSubmit] as any[]);
 
         if (error) throw error;
         toast({ title: 'تم إضافة المورد بنجاح!' });

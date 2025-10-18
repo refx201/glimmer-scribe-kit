@@ -13,10 +13,10 @@ const PaymentMethodSelector = ({ selectedMethodId, onSelect }: PaymentMethodSele
 
   useEffect(() => {
     const fetchMethods = async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("payment_methods")
         .select("*")
-        .eq("is_active", true);
+        .eq("is_active", true as any);
       
       if (data) setMethods(data);
     };

@@ -36,10 +36,11 @@ export function PartnerStoriesList() {
         .from('partner_success_stories')
         .select('*')
         .order('display_order', { ascending: true })
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .returns<any[]>();
 
       if (error) throw error;
-      return data || [];
+      return data ?? [];
     },
   });
 
@@ -57,10 +58,10 @@ export function PartnerStoriesList() {
     if (!deleteDialog.id) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('partner_success_stories')
         .delete()
-        .eq('id', deleteDialog.id);
+        .eq('id' as any, deleteDialog.id as any);
 
       if (error) throw error;
 

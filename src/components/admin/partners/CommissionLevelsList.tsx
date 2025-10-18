@@ -34,10 +34,11 @@ export function CommissionLevelsList() {
       const { data, error } = await supabase
         .from('commission_levels')
         .select('*')
-        .order('display_order', { ascending: true });
+        .order('display_order', { ascending: true })
+        .returns<any[]>();
 
       if (error) throw error;
-      return data || [];
+      return data ?? [];
     },
   });
 
@@ -55,10 +56,10 @@ export function CommissionLevelsList() {
     if (!deleteDialog.id) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('commission_levels')
         .delete()
-        .eq('id', deleteDialog.id);
+        .eq('id' as any, deleteDialog.id as any);
 
       if (error) throw error;
 

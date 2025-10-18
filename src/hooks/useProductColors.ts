@@ -35,7 +35,8 @@ export function useProductColors(productColors: any[] = []) {
         // Fetch ALL colors from custom_colors table
         const { data: customColors, error: colorsError } = await supabase
           .from('custom_colors')
-          .select('name, display_name, hex');
+          .select('name, display_name, hex')
+          .returns<{ name: string; display_name: string; hex: string }[]>();
 
         if (colorsError) {
           console.error('Error fetching colors:', colorsError);

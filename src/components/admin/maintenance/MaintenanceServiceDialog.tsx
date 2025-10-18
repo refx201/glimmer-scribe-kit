@@ -100,17 +100,17 @@ export function MaintenanceServiceDialog({
       };
 
       if (service) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('maintenance_services')
-          .update(data)
-          .eq('id', service.id);
+          .update(data as any)
+          .eq('id' as any, service.id as any);
 
         if (error) throw error;
         toast({ title: 'تم تحديث الخدمة بنجاح!' });
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('maintenance_services')
-          .insert([data]);
+          .insert([data] as any[]);
 
         if (error) throw error;
         toast({ title: 'تم إضافة الخدمة بنجاح!' });

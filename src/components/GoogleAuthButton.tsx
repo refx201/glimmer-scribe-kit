@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 
 // Constants - No magic numbers!
-const REDIRECT_DOMAIN = 'https://procell.app';
+const REDIRECT_DOMAIN = typeof window !== 'undefined' ? window.location.origin : 'https://procell.app';
 const CALLBACK_PATH = '/auth/callback';
 
 export function GoogleAuthButton() {

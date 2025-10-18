@@ -6,7 +6,7 @@ const SUPABASE_URL = "https://npbblbwuoaqcsysrzjiq.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wYmJsYnd1b2FxY3N5c3J6amlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUxMzU3OTQsImV4cCI6MjA1MDcxMTc5NH0.d5j3bCX2izoOeMwhXoJwV34qHLcZxnRclPONsQBca-s";
 
 // Production domain for Netlify deployment
-const PRODUCTION_DOMAIN = 'https://procell.app';
+const PRODUCTION_DOMAIN = typeof window !== 'undefined' ? window.location.origin : 'https://procell.app';
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -21,9 +21,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
-    // Ensure proper redirect handling for production
-    redirectTo: PRODUCTION_DOMAIN
+    flowType: 'pkce'
   }
 });
 

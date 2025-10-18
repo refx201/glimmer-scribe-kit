@@ -35,10 +35,11 @@ export function MaintenanceServicesList() {
         .from('maintenance_services')
         .select('*')
         .order('display_order', { ascending: true })
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .returns<any[]>();
 
       if (error) throw error;
-      return data || [];
+      return data ?? [];
     },
   });
 
@@ -56,10 +57,10 @@ export function MaintenanceServicesList() {
     if (!deleteDialog.id) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('maintenance_services')
         .delete()
-        .eq('id', deleteDialog.id);
+        .eq('id' as any, deleteDialog.id as any);
 
       if (error) throw error;
 

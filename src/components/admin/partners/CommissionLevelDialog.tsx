@@ -88,17 +88,17 @@ export function CommissionLevelDialog({
 
     try {
       if (level) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('commission_levels')
-          .update(formData)
-          .eq('id', level.id);
+          .update(formData as any)
+          .eq('id' as any, level.id as any);
 
         if (error) throw error;
         toast({ title: 'تم تحديث مستوى العمولة بنجاح!' });
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('commission_levels')
-          .insert([formData]);
+          .insert([formData] as any[]);
 
         if (error) throw error;
         toast({ title: 'تم إضافة مستوى العمولة بنجاح!' });

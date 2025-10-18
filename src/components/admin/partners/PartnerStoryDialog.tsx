@@ -78,17 +78,17 @@ export function PartnerStoryDialog({
       };
 
       if (story) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('partner_success_stories')
-          .update(data)
-          .eq('id', story.id);
+          .update(data as any)
+          .eq('id' as any, story.id as any);
 
         if (error) throw error;
         toast({ title: 'تم تحديث قصة النجاح بنجاح!' });
       } else {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('partner_success_stories')
-          .insert([data]);
+          .insert([data] as any[]);
 
         if (error) throw error;
         toast({ title: 'تم إضافة قصة النجاح بنجاح!' });
