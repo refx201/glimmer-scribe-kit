@@ -231,7 +231,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    let isProcessingOAuth = false;
     
     // Set up auth state listener FIRST (critical for OAuth)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -252,16 +251,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }, 0);
           
-          // Show welcome for email/password logins (OAuth handled in init)
-          if (event === 'SIGNED_IN' && !isProcessingOAuth) {
+          // Handle successful sign-in (both OAuth and email/password)
+          if (event === 'SIGNED_IN') {
             const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
+            const provider = session.user.app_metadata?.provider;
             
             setTimeout(() => {
               toast.success(`أهلاً بك، ${userName}!`, {
-                description: 'تم تسجيل الدخول بنجاح',
+                description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
                 duration: 4000
               });
-            }, 100);
+              
+              // Redirect to profile after sign-in
+              window.location.href = '/profile';
+            }, 500);
           }
         } else {
           setUserProfile(null);
@@ -282,88 +285,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
     
-    // Initialize auth by checking for OAuth callback
+    // Initialize auth by checking for existing session
     const initializeAuth = async () => {
       try {
-        // Check if we have an OAuth callback token in URL
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const hasAuthCallback = hashParams.has('access_token') || hashParams.has('code');
+        console.log('[AUTH] Checking for existing session...');
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (hasAuthCallback) {
-          console.log('[AUTH] Detected OAuth callback, processing...');
-          isProcessingOAuth = true;
-          
-          // Wait longer for Supabase to process OAuth tokens
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Retry getting session up to 3 times
-          let session = null;
-          for (let i = 0; i < 3; i++) {
-            console.log(`[AUTH] Attempt ${i + 1} to get session...`);
-            const { data, error } = await supabase.auth.getSession();
-            
-            if (error) {
-              console.error('[AUTH] Error getting session:', error);
-            }
-            
-            if (data?.session) {
-              session = data.session;
-              console.log('[AUTH] Session retrieved successfully!');
-              break;
-            }
-            
-            if (i < 2) {
-              console.log('[AUTH] Session not ready, waiting...');
-              await new Promise(resolve => setTimeout(resolve, 300));
-            }
-          }
-          
-          if (!mounted) return;
-          
-          if (session) {
-            console.log('[AUTH] OAuth session established:', session.user.email);
-            setSession(session);
-            setUser(session.user);
-            
-            // Sync profile
-            await syncProfileWithDatabase(session.user.id, session);
-            
-            // Show welcome message
-            const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
-            const provider = session.user.app_metadata?.provider;
-            
-            toast.success(`أهلاً بك، ${userName}!`, {
-              description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
-              duration: 4000
-            });
-            
-            // Clean up URL
-            setTimeout(() => {
-              window.history.replaceState(null, '', window.location.pathname);
-            }, 500);
-          } else {
-            console.error('[AUTH] Failed to retrieve OAuth session after multiple attempts');
-            toast.error('فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.');
-          }
+        if (error) {
+          console.error('[AUTH] Error getting session:', error);
+        }
+        
+        if (!mounted) return;
+        
+        if (session) {
+          console.log('[AUTH] Existing session found:', session.user.email);
+          setSession(session);
+          setUser(session.user);
+          await syncProfileWithDatabase(session.user.id, session);
         } else {
-          // Regular session check (no OAuth)
-          console.log('[AUTH] Checking for existing session...');
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
-          if (error) {
-            console.error('[AUTH] Error getting session:', error);
-          }
-          
-          if (!mounted) return;
-          
-          if (session) {
-            console.log('[AUTH] Existing session found:', session.user.email);
-            setSession(session);
-            setUser(session.user);
-            await syncProfileWithDatabase(session.user.id, session);
-          } else {
-            console.log('[AUTH] No existing session');
-          }
+          console.log('[AUTH] No existing session');
         }
         
         setLoading(false);
@@ -436,10 +376,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (error) throw error
       
-      // Redirect to profile after successful sign in
-      setTimeout(() => {
-        window.location.href = '/profile';
-      }, 500);
+      // onAuthStateChange will handle the redirect
     } catch (error) {
       console.error('Sign in error:', error)
       throw error
