@@ -1,7 +1,7 @@
 import { Button } from './ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 export function GoogleAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -9,29 +9,37 @@ export function GoogleAuthButton() {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      console.log('🚀 [GOOGLE AUTH] Starting Supabase Google OAuth sign-in...');
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      // Determine full redirect URL based on environment
+      const isLocalhost = window.location.hostname === 'localhost';
+      const redirectUrl = isLocalhost 
+        ? 'http://localhost:3000/auth/callback'
+        : 'https://procell.app/auth/callback';
+      
+      console.log('🚀 [GOOGLE AUTH] Starting OAuth flow...');
+      console.log('🌐 [GOOGLE AUTH] Redirect URL:', redirectUrl);
+      console.log('🏠 [GOOGLE AUTH] Environment:', isLocalhost ? 'localhost' : 'production');
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
-          },
-        },
+          }
+        }
       });
 
       if (error) {
-        console.error('❌ [GOOGLE AUTH] Sign-in error:', error);
-        toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
-        setIsLoading(false);
-        return;
+        console.error('❌ [GOOGLE BUTTON] OAuth error:', error);
+        throw error;
       }
 
-      console.log('✅ [GOOGLE AUTH] Redirecting to Google...');
+      console.log('✅ [GOOGLE BUTTON] OAuth initiated, redirecting to Google...');
+      // Supabase will handle the redirect
     } catch (error: any) {
-      console.error('❌ [GOOGLE AUTH] Fatal error:', error);
+      console.error('❌ [GOOGLE BUTTON] Fatal error:', error);
       toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
       setIsLoading(false);
     }

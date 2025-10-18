@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { User, Session, RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 interface AuthContextType {
   user: User | null
@@ -126,13 +127,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [presenceChannel, updatePresence]);
 
   // Function to sync profile with database
-  const syncProfileWithDatabase = useCallback(async (userId: string, email?: string, name?: string) => {
+  const syncProfileWithDatabase = async (userId: string, session: Session) => {
     console.log('[AUTH] Starting profile sync for user:', userId);
+    console.log('[AUTH] Session provider:', session.user.app_metadata?.provider);
+    console.log('[AUTH] User metadata:', session.user.user_metadata);
     
     try {
       // Fetch user roles
       const roles = await fetchUserRoles(userId);
-      
       // First, check if profile exists
       console.log('[AUTH] Checking for existing profile...');
       const { data: existingProfile, error: fetchError } = await supabase
@@ -148,12 +150,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Create profile if it doesn't exist
-      if (!existingProfile && !fetchError && email) {
+      if (!existingProfile && !fetchError) {
         const profileData = {
           id: userId,
-          email: email,
-          full_name: name || email.split('@')[0] || 'مستخدم',
-          display_name: name || email.split('@')[0] || 'مستخدم'
+          email: session.user.email,
+          full_name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'مستخدم',
+          display_name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'مستخدم',
+          phone: session.user.user_metadata?.phone || '',
+          phone_number: session.user.user_metadata?.phone || ''
         };
 
         console.log('[AUTH] Creating new profile:', profileData);
@@ -196,11 +200,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Setup presence tracking
         await setupPresenceTracking(userId);
       } else {
-        console.log('[AUTH] No profile found, using fallback');
+        console.log('[AUTH] No profile found, using metadata fallback');
         const fallbackProfile = {
           id: userId,
-          email: email || '',
-          name: name || email?.split('@')[0] || 'مستخدم',
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
           roles: roles
         };
         console.log('[AUTH] Fallback profile:', fallbackProfile);
@@ -212,28 +216,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('[AUTH] Critical error syncing profile:', error);
+      // Fallback to user metadata on any error
       const errorFallback = {
         id: userId,
-        email: email || '',
-        name: name || email?.split('@')[0] || 'مستخدم',
+        email: session.user.email,
+        name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
         roles: []
       };
       console.log('[AUTH] Error fallback profile:', errorFallback);
       setUserProfile(errorFallback);
       setUserRoles([]);
     }
-  }, [fetchUserRoles, setupPresenceTracking]);
+  };
 
   useEffect(() => {
     let mounted = true;
     
-    // Set up Supabase auth state listener
-    console.log('[AUTH] Setting up Supabase auth state listener...');
+    // Set up auth state listener FIRST (critical for OAuth)
+    console.log('[AUTH] Setting up auth state listener...');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('=== [AUTH] Supabase auth state changed ===');
+        console.log('=== [AUTH] State change detected ===');
         console.log('[AUTH] Event:', event);
-        console.log('[AUTH] Session:', session ? 'exists' : 'null');
+        console.log('[AUTH] Timestamp:', new Date().toISOString());
+        console.log('[AUTH] Session details:', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email,
+          provider: session?.user?.app_metadata?.provider,
+          expiresAt: session?.expires_at
+        });
         
         if (!mounted) return;
         
@@ -241,19 +253,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log('[AUTH] ✅ User authenticated:', session.user.email);
-          await syncProfileWithDatabase(
-            session.user.id, 
-            session.user.email || '', 
-            session.user.user_metadata?.full_name || session.user.user_metadata?.name
-          );
+          console.log('[AUTH] ✅ User session active');
+          console.log('[AUTH] User metadata:', session.user.user_metadata);
+          console.log('[AUTH] App metadata:', session.user.app_metadata);
+          console.log('[AUTH] Starting profile sync in background...');
+          
+          // Sync profile in background
+          setTimeout(async () => {
+            if (mounted) {
+              console.log('[AUTH] Executing profile sync...');
+              await syncProfileWithDatabase(session.user.id, session);
+              console.log('[AUTH] Profile sync completed');
+            }
+          }, 0);
+          
+          // Handle successful sign-in - ONLY for email/password
+          // OAuth sign-in is handled by AuthCallback component
+          if (event === 'SIGNED_IN') {
+            const provider = session.user.app_metadata?.provider;
+            
+            console.log('🎉 [AUTH] Sign in detected');
+            console.log('🔑 [AUTH] Provider:', provider);
+            
+            // OAuth logins are handled by AuthCallback - don't interfere!
+            if (provider === 'google' || provider === 'apple') {
+              console.log('ℹ️ [AUTH] OAuth login - letting AuthCallback handle redirect');
+              return;
+            }
+            
+            // Only handle email/password logins here
+            const userName = session.user.user_metadata?.name || 
+                            session.user.user_metadata?.full_name || 
+                            session.user.email?.split('@')[0] || 
+                            'المستخدم';
+            
+            toast.success(`أهلاً بك، ${userName}!`, {
+              description: 'تم تسجيل الدخول بنجاح',
+              duration: 3000
+            });
+            
+            console.log('🚀 [AUTH] Redirecting to profile...');
+            setTimeout(() => {
+              window.location.href = '/profile';
+            }, 1000);
+          }
         } else {
-          console.log('[AUTH] ⚠️ No user - signed out');
+          console.log('[AUTH] ⚠️ No session - user signed out or session expired');
           setUserProfile(null);
           setUserRoles([]);
 
           // Clean up presence tracking
           if (presenceChannel) {
+            // Clear heartbeat interval
             if ((presenceChannel as any).heartbeatInterval) {
               clearInterval((presenceChannel as any).heartbeatInterval);
             }
@@ -266,20 +317,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
     
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        syncProfileWithDatabase(
-          session.user.id,
-          session.user.email || '',
-          session.user.user_metadata?.full_name || session.user.user_metadata?.name
-        );
+    // Initialize auth by checking for existing session
+    const initializeAuth = async () => {
+      try {
+        console.log('=== [AUTH] Initializing authentication ===');
+        console.log('[AUTH] Timestamp:', new Date().toISOString());
+        console.log('[AUTH] Current URL:', window.location.href);
+        console.log('[AUTH] Pathname:', window.location.pathname);
+        
+        // Check for existing session (OAuth callback is handled by AuthCallback component)
+        console.log('[AUTH] Checking for existing session...');
+        const sessionCheckStart = Date.now();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        const sessionCheckDuration = Date.now() - sessionCheckStart;
+        
+        console.log('[AUTH] Session check completed in:', sessionCheckDuration, 'ms');
+        console.log('[AUTH] Session result:', {
+          hasSession: !!session,
+          hasError: !!error,
+          errorMessage: error?.message,
+          userId: session?.user?.id,
+          userEmail: session?.user?.email
+        });
+        
+        if (error) {
+          console.error('[AUTH] ❌ Error getting session:', {
+            message: error.message,
+            status: error.status,
+            name: error.name
+          });
+        }
+        
+        if (!mounted) {
+          console.log('[AUTH] ⚠️ Component unmounted, skipping initialization');
+          return;
+        }
+        
+        if (session) {
+          console.log('[AUTH] ✅ Existing session found');
+          console.log('[AUTH] User email:', session.user.email);
+          console.log('[AUTH] User ID:', session.user.id);
+          console.log('[AUTH] Provider:', session.user.app_metadata?.provider);
+          
+          setSession(session);
+          setUser(session.user);
+          
+          console.log('[AUTH] Syncing profile with database...');
+          await syncProfileWithDatabase(session.user.id, session);
+          console.log('[AUTH] Profile sync completed');
+        } else {
+          console.log('[AUTH] ℹ️ No existing session found');
+        }
+        
+        setLoading(false);
+        console.log('[AUTH] ✅ Initialization complete');
+      } catch (error) {
+        console.error('[AUTH] ❌ Critical error during initialization:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
+        if (mounted) {
+          setLoading(false);
+          toast.error('حدث خطأ في تسجيل الدخول');
+        }
       }
-      setLoading(false);
-    });
+    };
+    
+    // Start initialization
+    initializeAuth();
 
     return () => {
       mounted = false;
@@ -293,12 +399,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         supabase.removeChannel(presenceChannel);
       }
     };
-  }, [syncProfileWithDatabase, presenceChannel]);
+  }, [fetchUserRoles, setupPresenceTracking])
+
 
   const signUp = async (email: string, password: string, name: string, userType = 'customer', phone?: string) => {
     try {
       console.log('Frontend signup attempt - auto-confirming user')
       
+      // Use Supabase client with emailRedirectTo and auto-confirmation disabled
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -316,6 +424,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('User signed up successfully:', data.user?.email)
       
+      // Show welcome toast
       toast.success('مرحباً بك! تم إنشاء حسابك بنجاح', {
         description: 'يمكنك الآن تسجيل الدخول والاستمتاع بخدماتنا'
       })
@@ -333,6 +442,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       if (error) throw error
+      
+      // onAuthStateChange will handle the redirect
     } catch (error) {
       console.error('Sign in error:', error)
       throw error
@@ -340,8 +451,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signInWithGoogle = async () => {
-    // Google sign-in is handled by GoogleAuthButton component using Firebase
-    console.log('ℹ️ [AUTH] Use GoogleAuthButton component for Google sign-in');
+    try {
+      const isLocalhost = window.location.hostname === 'localhost';
+      const redirectUrl = isLocalhost 
+        ? 'http://localhost:3000/auth/callback'
+        : 'https://procell.app/auth/callback';
+        
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      })
+      if (error) throw error
+      
+      // Toast will be shown after redirect in the auth state change listener
+    } catch (error) {
+      console.error('Google sign in error:', error)
+      toast.error('فشل تسجيل الدخول عبر Google')
+      throw error
+    }
   }
 
   const signInWithApple = async () => {
@@ -369,9 +502,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq('user_id', user.id);
       }
 
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
 
       // Redirect to home after sign out
       setTimeout(() => {
