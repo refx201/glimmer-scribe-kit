@@ -256,15 +256,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
             const provider = session.user.app_metadata?.provider;
             
+            console.log('[AUTH] Sign in successful, provider:', provider);
+            
+            toast.success(`أهلاً بك، ${userName}!`, {
+              description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
+              duration: 4000
+            });
+            
+            // Redirect to profile after sign-in
             setTimeout(() => {
-              toast.success(`أهلاً بك، ${userName}!`, {
-                description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
-                duration: 4000
-              });
-              
-              // Redirect to profile after sign-in
               window.location.href = '/profile';
-            }, 500);
+            }, 1000);
           }
         } else {
           setUserProfile(null);
@@ -385,15 +387,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+      console.log('[AUTH] Starting Google sign in...');
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: window.location.origin,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         }
       })
-      if (error) throw error
+      if (error) {
+        console.error('[AUTH] Google OAuth error:', error);
+        throw error;
+      }
+      console.log('[AUTH] Google OAuth redirect initiated');
     } catch (error) {
-      console.error('Google sign in error:', error)
+      console.error('[AUTH] Google sign in error:', error)
+      toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
       throw error
     }
   }
