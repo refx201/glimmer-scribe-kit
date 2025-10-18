@@ -175,15 +175,24 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
         }
       }
 
-      // Filter category filter - check if product's filter_category_id matches selected categories
+      // Filter category filter from CompactFilterBar - check if product's filter_category_id matches selected categories
       if (selectedCategories.length > 0) {
         if (!product.filter_category_id || !selectedCategories.includes(product.filter_category_id)) {
           return false;
         }
       }
 
-      // Category filter is controlled by tabs; ignore header category here
-
+      // Button category filter - check if product's filter_category_id matches the selected category button
+      if (selectedCategory !== 'all') {
+        // Find the category object to get its ID
+        const categoryObj = (activeTab === 'devices' ? deviceCategories : accessoryCategories).find(
+          c => c.id === selectedCategory
+        );
+        
+        if (categoryObj && product.filter_category_id !== categoryObj.id) {
+          return false;
+        }
+      }
 
       // Search term filter
       if (searchTerm && !product.name.toLowerCase().includes(searchTerm.toLowerCase())) {
@@ -788,8 +797,8 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
                     {deviceCategories.map((category) => (
                       <Button 
                         key={category.id}
-                        variant={selectedCategory === category.name ? 'default' : 'outline'}
-                        onClick={() => setSelectedCategory(category.name)}
+                        variant={selectedCategory === category.id ? 'default' : 'outline'}
+                        onClick={() => setSelectedCategory(category.id)}
                         className="rounded-full"
                       >
                         {getIconComponent(category.icon)}
@@ -802,8 +811,8 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
                     {accessoryCategories.map((category) => (
                       <Button 
                         key={category.id}
-                        variant={selectedCategory === category.name ? 'default' : 'outline'}
-                        onClick={() => setSelectedCategory(category.name)}
+                        variant={selectedCategory === category.id ? 'default' : 'outline'}
+                        onClick={() => setSelectedCategory(category.id)}
                         className="rounded-full"
                       >
                         {getIconComponent(category.icon)}
