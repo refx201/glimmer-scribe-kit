@@ -119,91 +119,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let mounted = true;
     let isProcessingOAuth = false;
     
-    // Initialize auth by checking for OAuth callback first
-    const initializeAuth = async () => {
-      try {
-        // Check if we have an OAuth callback token in URL
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const hasAuthCallback = hashParams.has('access_token') || hashParams.has('code');
-        
-        if (hasAuthCallback) {
-          console.log('[AUTH] Detected OAuth callback in URL');
-          isProcessingOAuth = true;
-          // Give Supabase time to process the OAuth callback
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-        
-        // Get current session (will detect OAuth tokens automatically)
-        console.log('[AUTH] Fetching session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('[AUTH] Error getting session:', error);
-        } else {
-          console.log('[AUTH] Session retrieved:', session ? {
-            user: session.user.email,
-            provider: session.user.app_metadata?.provider,
-            hasMetadata: !!session.user.user_metadata
-          } : 'null');
-        }
-        
-        if (!mounted) {
-          console.log('[AUTH] Component unmounted, skipping session setup');
-          return;
-        }
-        
-        if (session) {
-          console.log('[AUTH] Setting session state for:', session.user.email);
-          setSession(session);
-          setUser(session.user);
-          
-          // Sync profile in background
-          console.log('[AUTH] Scheduling profile sync...');
-          setTimeout(async () => {
-            if (mounted) {
-              console.log('[AUTH] Executing profile sync...');
-              await syncProfileWithDatabase(session.user.id, session);
-              console.log('[AUTH] Profile sync completed');
-            } else {
-              console.log('[AUTH] Component unmounted, skipping profile sync');
-            }
-          }, 0);
-          
-          // Show welcome message for OAuth logins
-          if (isProcessingOAuth) {
-            const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
-            const provider = session.user.app_metadata?.provider;
-            
-            console.log('[AUTH] Showing welcome message for OAuth login');
-            setTimeout(() => {
-              toast.success(`أهلاً بك، ${userName}!`, {
-                description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
-                duration: 4000
-              });
-            }, 100);
-            
-            // Clean up URL after OAuth
-            setTimeout(() => {
-              console.log('[AUTH] Cleaning up OAuth URL parameters');
-              window.history.replaceState(null, '', window.location.pathname);
-            }, 500);
-          }
-        } else {
-          console.log('[AUTH] No session found');
-        }
-        
-        setLoading(false);
-        console.log('[AUTH] Initialization complete');
-      } catch (error) {
-        console.error('[AUTH] Critical error during initialization:', error);
-        if (mounted) setLoading(false);
-      }
-    };
-    
-    // Set up auth state change listener
+    // Set up auth state listener FIRST (critical for OAuth)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+        console.log('[AUTH] State change event:', event, session?.user?.email);
         
         if (!mounted) return;
         
@@ -211,6 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log('[AUTH] User session active, syncing profile...');
           // Sync profile in background
           setTimeout(async () => {
             if (mounted) {
@@ -218,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }, 0);
           
-          // Show welcome for email/password logins (OAuth is handled in initializeAuth)
+          // Show welcome for email/password logins (OAuth handled in init)
           if (event === 'SIGNED_IN' && !isProcessingOAuth) {
             const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
             
@@ -236,6 +156,101 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     );
+    
+    // Initialize auth by checking for OAuth callback
+    const initializeAuth = async () => {
+      try {
+        // Check if we have an OAuth callback token in URL
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const hasAuthCallback = hashParams.has('access_token') || hashParams.has('code');
+        
+        if (hasAuthCallback) {
+          console.log('[AUTH] Detected OAuth callback, processing...');
+          isProcessingOAuth = true;
+          
+          // Wait longer for Supabase to process OAuth tokens
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Retry getting session up to 3 times
+          let session = null;
+          for (let i = 0; i < 3; i++) {
+            console.log(`[AUTH] Attempt ${i + 1} to get session...`);
+            const { data, error } = await supabase.auth.getSession();
+            
+            if (error) {
+              console.error('[AUTH] Error getting session:', error);
+            }
+            
+            if (data?.session) {
+              session = data.session;
+              console.log('[AUTH] Session retrieved successfully!');
+              break;
+            }
+            
+            if (i < 2) {
+              console.log('[AUTH] Session not ready, waiting...');
+              await new Promise(resolve => setTimeout(resolve, 300));
+            }
+          }
+          
+          if (!mounted) return;
+          
+          if (session) {
+            console.log('[AUTH] OAuth session established:', session.user.email);
+            setSession(session);
+            setUser(session.user);
+            
+            // Sync profile
+            await syncProfileWithDatabase(session.user.id, session);
+            
+            // Show welcome message
+            const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
+            const provider = session.user.app_metadata?.provider;
+            
+            toast.success(`أهلاً بك، ${userName}!`, {
+              description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
+              duration: 4000
+            });
+            
+            // Clean up URL
+            setTimeout(() => {
+              window.history.replaceState(null, '', window.location.pathname);
+            }, 500);
+          } else {
+            console.error('[AUTH] Failed to retrieve OAuth session after multiple attempts');
+            toast.error('فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.');
+          }
+        } else {
+          // Regular session check (no OAuth)
+          console.log('[AUTH] Checking for existing session...');
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (error) {
+            console.error('[AUTH] Error getting session:', error);
+          }
+          
+          if (!mounted) return;
+          
+          if (session) {
+            console.log('[AUTH] Existing session found:', session.user.email);
+            setSession(session);
+            setUser(session.user);
+            await syncProfileWithDatabase(session.user.id, session);
+          } else {
+            console.log('[AUTH] No existing session');
+          }
+        }
+        
+        setLoading(false);
+        console.log('[AUTH] Initialization complete');
+      } catch (error) {
+        console.error('[AUTH] Critical error during initialization:', error);
+        if (mounted) {
+          setLoading(false);
+          toast.error('حدث خطأ في تسجيل الدخول');
+        }
+      }
+    };
     
     // Start initialization
     initializeAuth();
