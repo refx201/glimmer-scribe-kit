@@ -32,7 +32,9 @@ import {
   Calculator,
   Zap,
   Shield,
-  Gift
+  Gift,
+  Percent,
+  Headphones
 } from 'lucide-react';
 import { toast } from 'sonner'
 
@@ -77,6 +79,22 @@ export function PartnersPage() {
       return data || [];
     },
   });
+
+  // Fetch stat boxes for hero quick benefits
+  const { data: partnerStats = [], isLoading: statsLoading } = useQuery({
+    queryKey: ['partner-stat-boxes-hero'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stat_boxes')
+        .select('*')
+        .eq('is_active', true as any)
+        .order('display_order', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const iconMap: Record<string, any> = { Users, Percent, TrendingUp, Headphones, DollarSign, Target, Clock, Star, Award, CheckCircle };
 
   const partnershipBenefits = [
     {
@@ -196,24 +214,30 @@ export function PartnersPage() {
               ابدأ رحلتك في عالم التسويق بالعمولة مع ProCell واحصل على دخل إضافي ممتاز من خلال بيع أفضل الهواتف الذكية
             </p>
 
-            {/* Quick Benefits */}
+            {/* Quick Benefits - from DB stat_boxes */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto mb-8">
-              <div className="text-center bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                <div className="text-2xl font-bold text-procell-accent">500+</div>
-                <div className="text-xs text-white/80">شريك نشط</div>
-              </div>
-              <div className="text-center bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                <div className="text-2xl font-bold text-white">15%</div>
-                <div className="text-xs text-white/80">عمولة قصوى</div>
-              </div>
-              <div className="text-center bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                <div className="text-2xl font-bold text-procell-accent">3,500₪</div>
-                <div className="text-xs text-white/80">متوسط الأرباح</div>
-              </div>
-              <div className="text-center bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                <div className="text-2xl font-bold text-white">24/7</div>
-                <div className="text-xs text-white/80">دعم مستمر</div>
-              </div>
+              {statsLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="text-center bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                    <div className="h-6 bg-white/20 animate-pulse rounded mb-2" />
+                    <div className="h-4 bg-white/10 animate-pulse rounded" />
+                  </div>
+                ))
+              ) : (
+                partnerStats.map((stat: any, index: number) => {
+                  const IconComponent = iconMap[stat.icon] || Users;
+                  const colorClass = stat.color || 'text-white';
+                  return (
+                    <div key={index} className="text-center bg-white/10 rounded-lg p-4 backdrop-blur-sm">
+                      <div className={`text-2xl font-bold ${colorClass}`}>{stat.number}</div>
+                      <div className="text-xs text-white/80 flex items-center gap-1 justify-center mt-1">
+                        <IconComponent className={`h-4 w-4 ${colorClass}`} />
+                        <span>{stat.label}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             <Button 

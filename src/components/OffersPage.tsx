@@ -182,10 +182,8 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
         }
       }
 
-      // Category filter
-      if (selectedCategory !== 'all' && product.category !== selectedCategory) {
-        return false;
-      }
+      // Category filter is controlled by tabs; ignore header category here
+
 
       // Search term filter
       if (searchTerm && !product.name.toLowerCase().includes(searchTerm.toLowerCase())) {
