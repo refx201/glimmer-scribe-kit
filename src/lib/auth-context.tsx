@@ -51,6 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             toast.success(`أهلاً بك، ${userName}!`, {
               description: isGoogleSignIn ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح'
             });
+            
+            // Clean up URL hash after successful OAuth sign in
+            if (window.location.hash.includes('access_token')) {
+              window.history.replaceState(null, '', window.location.pathname);
+            }
           }
         } else {
           setUserProfile(null)
@@ -60,11 +65,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     )
 
-    // THEN check for existing session
+    // THEN get session - this will process URL hash if present
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
+      if (session) {
+        setSession(session)
+        setUser(session?.user ?? null)
         setUserProfile({
           id: session.user.id,
           email: session.user.email,
