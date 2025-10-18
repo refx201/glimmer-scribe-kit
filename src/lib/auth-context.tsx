@@ -91,76 +91,113 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let isProcessingOAuth = false;
     
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
+    // Initialize auth by checking for OAuth callback first
+    const initializeAuth = async () => {
+      try {
+        // Check if we have an OAuth callback token in URL
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const hasAuthCallback = hashParams.has('access_token') || hashParams.has('code');
+        
+        if (hasAuthCallback) {
+          console.log('Processing OAuth callback...');
+          isProcessingOAuth = true;
+          // Give Supabase time to process the OAuth callback
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        
+        // Get current session (will detect OAuth tokens automatically)
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
         
         if (!mounted) return;
         
-        // Store session and user
-        setSession(session)
-        setUser(session?.user ?? null)
-        
-        // Sync profile from database
-        if (session?.user) {
-          // Use setTimeout to defer the profile sync and prevent blocking
+        if (session) {
+          console.log('Session established:', session.user.email);
+          setSession(session);
+          setUser(session.user);
+          
+          // Sync profile in background
           setTimeout(async () => {
             if (mounted) {
               await syncProfileWithDatabase(session.user.id, session);
             }
           }, 0);
           
-          // Handle successful sign in - show toast only once
-          if (event === 'SIGNED_IN') {
+          // Show welcome message for OAuth logins
+          if (isProcessingOAuth) {
             const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
-            const isGoogleSignIn = session.user.app_metadata?.provider === 'google';
+            const provider = session.user.app_metadata?.provider;
             
-            // Show welcome message
             setTimeout(() => {
               toast.success(`أهلاً بك، ${userName}!`, {
-                description: isGoogleSignIn ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
+                description: provider === 'google' ? 'تم تسجيل الدخول بنجاح عبر Google' : 'تم تسجيل الدخول بنجاح',
                 duration: 4000
               });
             }, 100);
             
-            // Clean up URL hash after successful OAuth sign in
-            if (window.location.hash.includes('access_token')) {
-              setTimeout(() => {
-                window.history.replaceState(null, '', window.location.pathname);
-              }, 500);
-            }
+            // Clean up URL after OAuth
+            setTimeout(() => {
+              window.history.replaceState(null, '', window.location.pathname);
+            }, 500);
           }
-        } else {
-          setUserProfile(null)
         }
         
-        setLoading(false)
+        setLoading(false);
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) setLoading(false);
       }
-    )
-
-    // THEN get session - this will process URL hash if present
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return;
-      
-      if (session) {
-        setSession(session)
-        setUser(session?.user ?? null)
-        // Defer profile sync
-        setTimeout(() => {
-          if (mounted) {
-            syncProfileWithDatabase(session.user.id, session);
+    };
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Sync profile in background
+          setTimeout(async () => {
+            if (mounted) {
+              await syncProfileWithDatabase(session.user.id, session);
+            }
+          }, 0);
+          
+          // Show welcome for email/password logins (OAuth is handled in initializeAuth)
+          if (event === 'SIGNED_IN' && !isProcessingOAuth) {
+            const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'المستخدم';
+            
+            setTimeout(() => {
+              toast.success(`أهلاً بك، ${userName}!`, {
+                description: 'تم تسجيل الدخول بنجاح',
+                duration: 4000
+              });
+            }, 100);
           }
-        }, 0);
+        } else {
+          setUserProfile(null);
+        }
+        
+        setLoading(false);
       }
-      setLoading(false)
-    })
+    );
+    
+    // Start initialization
+    initializeAuth();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
-    }
+    };
   }, [])
 
 
