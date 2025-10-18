@@ -53,8 +53,12 @@ export function StatBoxDialog({ box, open, onOpenChange }: StatBoxDialogProps) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (box) {
-      setFormData(box);
+    if (box && box.id) {
+      setFormData({
+        ...box,
+        display_order: box.display_order || 0,
+        is_active: box.is_active ?? true
+      });
     } else {
       setFormData({ 
         number: '', 
@@ -66,11 +70,11 @@ export function StatBoxDialog({ box, open, onOpenChange }: StatBoxDialogProps) {
         page: box?.page || 'home'
       });
     }
-  }, [box]);
+  }, [box, open]);
 
   const saveMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      if (box) {
+      if (box && box.id) {
         const { error } = await supabase
           .from('stat_boxes')
           .update(data)
@@ -85,10 +89,11 @@ export function StatBoxDialog({ box, open, onOpenChange }: StatBoxDialogProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stat-boxes'] });
-      toast({ title: box ? 'تم تحديث الصندوق' : 'تم إضافة الصندوق' });
+      toast({ title: box?.id ? 'تم تحديث الصندوق' : 'تم إضافة الصندوق' });
       onOpenChange(false);
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Save error:', error);
       toast({ title: 'خطأ في حفظ البيانات', variant: 'destructive' });
     },
   });
@@ -168,7 +173,7 @@ export function StatBoxDialog({ box, open, onOpenChange }: StatBoxDialogProps) {
             <Input
               type="number"
               value={formData.display_order}
-              onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
             />
           </div>
           <div className="flex items-center gap-2">
