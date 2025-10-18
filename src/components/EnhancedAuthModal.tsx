@@ -8,6 +8,7 @@ import { useAuth } from '../lib/auth-context';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock, User, Smartphone, Shield, Sparkles } from 'lucide-react';
 import procellLogo from '../assets/procell-logo.png';
+import { GoogleAuthButton } from './GoogleAuthButton';
 
 interface EnhancedAuthModalProps {
   isOpen: boolean;
@@ -211,6 +212,17 @@ export function EnhancedAuthModal({ isOpen, onClose }: EnhancedAuthModalProps) {
                   )}
                 </Button>
               </form>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-procell-primary/10" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-muted-foreground">أو</span>
+                </div>
+              </div>
+
+              <GoogleAuthButton />
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-6 mt-6 animate-fade-in">
@@ -334,6 +346,8 @@ export function EnhancedAuthModal({ isOpen, onClose }: EnhancedAuthModalProps) {
                   <span className="bg-white px-2 text-muted-foreground">أو</span>
                 </div>
               </div>
+
+              <GoogleAuthButton />
             </TabsContent>
           </Tabs>
 

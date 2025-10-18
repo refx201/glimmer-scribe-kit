@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean
   signUp: (email: string, password: string, name: string, userType?: string, phone?: string) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
+  signInWithGoogle: () => Promise<void>
   signInWithApple: () => Promise<void>
   signOut: () => Promise<void>
   userProfile: any
@@ -382,6 +383,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
+      })
+      if (error) throw error
+    } catch (error) {
+      console.error('Google sign in error:', error)
+      throw error
+    }
+  }
+
   const signInWithApple = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -435,6 +451,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signInWithApple,
     signOut,
     userProfile,
