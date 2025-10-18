@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase
         .from('user_presence')
         .upsert({
-          user_id: user.id,
+          user_id: user.uid,
           heartbeat_at: new Date().toISOString(),
           metadata: {
             page: window.location.pathname,
@@ -126,11 +126,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return channel;
   }, [presenceChannel, updatePresence]);
 
-  // Function to sync profile with database
-  const syncProfileWithDatabase = async (userId: string, session: Session) => {
+  // Function to sync profile with database (for Firebase users)
+  const syncProfileWithDatabase = async (userId: string, firebaseUser?: FirebaseUser) => {
     console.log('[AUTH] Starting profile sync for user:', userId);
-    console.log('[AUTH] Session provider:', session.user.app_metadata?.provider);
-    console.log('[AUTH] User metadata:', session.user.user_metadata);
+    console.log('[AUTH] Firebase user:', firebaseUser?.email);
     
     try {
       // Fetch user roles
@@ -153,11 +152,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!existingProfile && !fetchError) {
         const profileData = {
           id: userId,
-          email: session.user.email,
-          full_name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'مستخدم',
-          display_name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'مستخدم',
-          phone: session.user.user_metadata?.phone || '',
-          phone_number: session.user.user_metadata?.phone || ''
+          email: firebaseUser?.email || '',
+          full_name: firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'مستخدم',
+          display_name: firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'مستخدم',
+          phone: firebaseUser?.phoneNumber || '',
+          phone_number: firebaseUser?.phoneNumber || ''
         };
 
         console.log('[AUTH] Creating new profile:', profileData);
@@ -200,11 +199,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Setup presence tracking
         await setupPresenceTracking(userId);
       } else {
-        console.log('[AUTH] No profile found, using metadata fallback');
+        console.log('[AUTH] No profile found, using Firebase user data fallback');
         const fallbackProfile = {
           id: userId,
-          email: session.user.email,
-          name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
+          email: firebaseUser?.email || '',
+          name: firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'مستخدم',
           roles: roles
         };
         console.log('[AUTH] Fallback profile:', fallbackProfile);
@@ -216,11 +215,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('[AUTH] Critical error syncing profile:', error);
-      // Fallback to user metadata on any error
+      // Fallback to Firebase user data on any error
       const errorFallback = {
         id: userId,
-        email: session.user.email,
-        name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
+        email: firebaseUser?.email || '',
+        name: firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'مستخدم',
         roles: []
       };
       console.log('[AUTH] Error fallback profile:', errorFallback);
@@ -232,164 +231,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
     
-    // Set up auth state listener FIRST (critical for OAuth)
-    console.log('[AUTH] Setting up auth state listener...');
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('=== [AUTH] State change detected ===');
-        console.log('[AUTH] Event:', event);
-        console.log('[AUTH] Timestamp:', new Date().toISOString());
-        console.log('[AUTH] Session details:', {
-          hasSession: !!session,
-          userId: session?.user?.id,
-          userEmail: session?.user?.email,
-          provider: session?.user?.app_metadata?.provider,
-          expiresAt: session?.expires_at
-        });
+    // Set up Firebase auth state listener
+    console.log('[AUTH] Setting up Firebase auth state listener...');
+    const unsubscribe = onFirebaseAuthStateChange(async (firebaseUser) => {
+      console.log('=== [AUTH] Firebase auth state changed ===');
+      console.log('[AUTH] Timestamp:', new Date().toISOString());
+      console.log('[AUTH] Firebase user:', {
+        hasUser: !!firebaseUser,
+        userId: firebaseUser?.uid,
+        userEmail: firebaseUser?.email,
+        displayName: firebaseUser?.displayName
+      });
+      
+      if (!mounted) return;
+      
+      setUser(firebaseUser);
+      
+      if (firebaseUser) {
+        console.log('[AUTH] ✅ Firebase user authenticated');
+        console.log('[AUTH] Starting profile sync...');
         
-        if (!mounted) return;
+        // Sync to Supabase
+        await syncUserToSupabase(firebaseUser);
+        await syncProfileWithDatabase(firebaseUser.uid, firebaseUser);
         
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          console.log('[AUTH] ✅ User session active');
-          console.log('[AUTH] User metadata:', session.user.user_metadata);
-          console.log('[AUTH] App metadata:', session.user.app_metadata);
-          console.log('[AUTH] Starting profile sync in background...');
-          
-          // Sync profile in background
-          setTimeout(async () => {
-            if (mounted) {
-              console.log('[AUTH] Executing profile sync...');
-              await syncProfileWithDatabase(session.user.id, session);
-              console.log('[AUTH] Profile sync completed');
-            }
-          }, 0);
-          
-          // Handle successful sign-in - ONLY for email/password
-          // OAuth sign-in is handled by AuthCallback component
-          if (event === 'SIGNED_IN') {
-            const provider = session.user.app_metadata?.provider;
-            
-            console.log('🎉 [AUTH] Sign in detected');
-            console.log('🔑 [AUTH] Provider:', provider);
-            
-            // OAuth logins are handled by AuthCallback - don't interfere!
-            if (provider === 'google' || provider === 'apple') {
-              console.log('ℹ️ [AUTH] OAuth login - letting AuthCallback handle redirect');
-              return;
-            }
-            
-            // Only handle email/password logins here
-            const userName = session.user.user_metadata?.name || 
-                            session.user.user_metadata?.full_name || 
-                            session.user.email?.split('@')[0] || 
-                            'المستخدم';
-            
-            toast.success(`أهلاً بك، ${userName}!`, {
-              description: 'تم تسجيل الدخول بنجاح',
-              duration: 3000
-            });
-            
-            console.log('🚀 [AUTH] Redirecting to profile...');
-            setTimeout(() => {
-              window.location.href = '/profile';
-            }, 1000);
-          }
-        } else {
-          console.log('[AUTH] ⚠️ No session - user signed out or session expired');
-          setUserProfile(null);
-          setUserRoles([]);
+        console.log('[AUTH] Profile sync completed');
+      } else {
+        console.log('[AUTH] ⚠️ No Firebase user - signed out');
+        setUserProfile(null);
+        setUserRoles([]);
+        setSession(null);
 
-          // Clean up presence tracking
-          if (presenceChannel) {
-            // Clear heartbeat interval
-            if ((presenceChannel as any).heartbeatInterval) {
-              clearInterval((presenceChannel as any).heartbeatInterval);
-            }
-            await supabase.removeChannel(presenceChannel);
-            setPresenceChannel(null);
+        // Clean up presence tracking
+        if (presenceChannel) {
+          if ((presenceChannel as any).heartbeatInterval) {
+            clearInterval((presenceChannel as any).heartbeatInterval);
           }
+          await supabase.removeChannel(presenceChannel);
+          setPresenceChannel(null);
         }
-        
-        setLoading(false);
       }
-    );
+      
+      setLoading(false);
+    });
     
-    // Initialize auth by checking for existing session
-    const initializeAuth = async () => {
-      try {
-        console.log('=== [AUTH] Initializing authentication ===');
-        console.log('[AUTH] Timestamp:', new Date().toISOString());
-        console.log('[AUTH] Current URL:', window.location.href);
-        console.log('[AUTH] Pathname:', window.location.pathname);
-        
-        // Check for existing session (OAuth callback is handled by AuthCallback component)
-        console.log('[AUTH] Checking for existing session...');
-        const sessionCheckStart = Date.now();
-        const { data: { session }, error } = await supabase.auth.getSession();
-        const sessionCheckDuration = Date.now() - sessionCheckStart;
-        
-        console.log('[AUTH] Session check completed in:', sessionCheckDuration, 'ms');
-        console.log('[AUTH] Session result:', {
-          hasSession: !!session,
-          hasError: !!error,
-          errorMessage: error?.message,
-          userId: session?.user?.id,
-          userEmail: session?.user?.email
-        });
-        
-        if (error) {
-          console.error('[AUTH] ❌ Error getting session:', {
-            message: error.message,
-            status: error.status,
-            name: error.name
-          });
-        }
-        
-        if (!mounted) {
-          console.log('[AUTH] ⚠️ Component unmounted, skipping initialization');
-          return;
-        }
-        
-        if (session) {
-          console.log('[AUTH] ✅ Existing session found');
-          console.log('[AUTH] User email:', session.user.email);
-          console.log('[AUTH] User ID:', session.user.id);
-          console.log('[AUTH] Provider:', session.user.app_metadata?.provider);
-          
-          setSession(session);
-          setUser(session.user);
-          
-          console.log('[AUTH] Syncing profile with database...');
-          await syncProfileWithDatabase(session.user.id, session);
-          console.log('[AUTH] Profile sync completed');
-        } else {
-          console.log('[AUTH] ℹ️ No existing session found');
-        }
-        
-        setLoading(false);
-        console.log('[AUTH] ✅ Initialization complete');
-      } catch (error) {
-        console.error('[AUTH] ❌ Critical error during initialization:', {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        });
-        if (mounted) {
-          setLoading(false);
-          toast.error('حدث خطأ في تسجيل الدخول');
-        }
+    // Initialize Firebase auth
+    const initializeAuth = () => {
+      console.log('=== [AUTH] Initializing Firebase authentication ===');
+      console.log('[AUTH] Current user:', firebaseAuth.currentUser?.email);
+      
+      if (firebaseAuth.currentUser && mounted) {
+        setUser(firebaseAuth.currentUser);
+        syncUserToSupabase(firebaseAuth.currentUser);
+        syncProfileWithDatabase(firebaseAuth.currentUser.uid, firebaseAuth.currentUser);
       }
+      
+      setLoading(false);
+      console.log('[AUTH] ✅ Firebase auth initialized');
     };
     
-    // Start initialization
     initializeAuth();
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      unsubscribe();
 
       // Cleanup presence tracking
       if (presenceChannel) {
@@ -451,30 +356,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signInWithGoogle = async () => {
-    try {
-      const isLocalhost = window.location.hostname === 'localhost';
-      const redirectUrl = isLocalhost 
-        ? 'http://localhost:3000/auth/callback'
-        : 'https://procell.app/auth/callback';
-        
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      })
-      if (error) throw error
-      
-      // Toast will be shown after redirect in the auth state change listener
-    } catch (error) {
-      console.error('Google sign in error:', error)
-      toast.error('فشل تسجيل الدخول عبر Google')
-      throw error
-    }
+    // Google sign-in is handled by GoogleAuthButton component using Firebase
+    console.log('ℹ️ [AUTH] Use GoogleAuthButton component for Google sign-in');
   }
 
   const signInWithApple = async () => {
@@ -499,10 +382,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase
           .from('user_presence')
           .delete()
-          .eq('user_id', user.id);
+          .eq('user_id', user.uid);
       }
 
-      const { error } = await supabase.auth.signOut()
+      const { error } = await firebaseSignOut()
       if (error) throw error
 
       // Redirect to home after sign out

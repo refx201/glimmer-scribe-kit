@@ -1,45 +1,42 @@
 import { Button } from './ui/button';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { signInWithGoogle } from '@/lib/firebase';
+import { useNavigate } from 'react-router-dom';
 
 export function GoogleAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
+      console.log('🚀 [GOOGLE AUTH] Starting Firebase Google sign-in...');
       
-      // Determine full redirect URL based on environment
-      const isLocalhost = window.location.hostname === 'localhost';
-      const redirectUrl = isLocalhost 
-        ? 'http://localhost:3000/auth/callback'
-        : 'https://procell.app/auth/callback';
-      
-      console.log('🚀 [GOOGLE AUTH] Starting OAuth flow...');
-      console.log('🌐 [GOOGLE AUTH] Redirect URL:', redirectUrl);
-      console.log('🏠 [GOOGLE AUTH] Environment:', isLocalhost ? 'localhost' : 'production');
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      });
+      const { user, error } = await signInWithGoogle();
 
       if (error) {
-        console.error('❌ [GOOGLE BUTTON] OAuth error:', error);
+        console.error('❌ [GOOGLE AUTH] Sign-in error:', error);
         throw error;
       }
 
-      console.log('✅ [GOOGLE BUTTON] OAuth initiated, redirecting to Google...');
-      // Supabase will handle the redirect
+      if (user) {
+        console.log('✅ [GOOGLE AUTH] Sign-in successful:', user.email);
+        const userName = user.displayName || user.email?.split('@')[0] || 'المستخدم';
+        
+        toast.success(`أهلاً بك، ${userName}!`, {
+          description: 'تم تسجيل الدخول بنجاح عبر Google',
+          duration: 3000
+        });
+        
+        // Redirect to home page
+        setTimeout(() => {
+          navigate('/');
+          setIsLoading(false);
+        }, 1000);
+      }
     } catch (error: any) {
-      console.error('❌ [GOOGLE BUTTON] Fatal error:', error);
+      console.error('❌ [GOOGLE AUTH] Fatal error:', error);
       toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
       setIsLoading(false);
     }
