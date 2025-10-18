@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { User, Session, RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-import { useNavigate } from 'react-router-dom'
 
 interface AuthContextType {
   user: User | null
@@ -60,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase
         .from('user_presence')
         .upsert({
-          user_id: user.uid,
+          user_id: user.id,
           heartbeat_at: new Date().toISOString(),
           metadata: {
             page: window.location.pathname,
@@ -126,14 +125,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return channel;
   }, [presenceChannel, updatePresence]);
 
-  // Function to sync profile with database (for Firebase users)
-  const syncProfileWithDatabase = async (userId: string, firebaseUser?: FirebaseUser) => {
+  // Function to sync profile with database
+  const syncProfileWithDatabase = useCallback(async (userId: string, email?: string, name?: string) => {
     console.log('[AUTH] Starting profile sync for user:', userId);
-    console.log('[AUTH] Firebase user:', firebaseUser?.email);
     
     try {
       // Fetch user roles
       const roles = await fetchUserRoles(userId);
+      
       // First, check if profile exists
       console.log('[AUTH] Checking for existing profile...');
       const { data: existingProfile, error: fetchError } = await supabase
@@ -149,14 +148,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Create profile if it doesn't exist
-      if (!existingProfile && !fetchError) {
+      if (!existingProfile && !fetchError && email) {
         const profileData = {
           id: userId,
-          email: firebaseUser?.email || '',
-          full_name: firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'مستخدم',
-          display_name: firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'مستخدم',
-          phone: firebaseUser?.phoneNumber || '',
-          phone_number: firebaseUser?.phoneNumber || ''
+          email: email,
+          full_name: name || email.split('@')[0] || 'مستخدم',
+          display_name: name || email.split('@')[0] || 'مستخدم'
         };
 
         console.log('[AUTH] Creating new profile:', profileData);
@@ -199,11 +196,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Setup presence tracking
         await setupPresenceTracking(userId);
       } else {
-        console.log('[AUTH] No profile found, using Firebase user data fallback');
+        console.log('[AUTH] No profile found, using fallback');
         const fallbackProfile = {
           id: userId,
-          email: firebaseUser?.email || '',
-          name: firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'مستخدم',
+          email: email || '',
+          name: name || email?.split('@')[0] || 'مستخدم',
           roles: roles
         };
         console.log('[AUTH] Fallback profile:', fallbackProfile);
@@ -215,86 +212,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('[AUTH] Critical error syncing profile:', error);
-      // Fallback to Firebase user data on any error
       const errorFallback = {
         id: userId,
-        email: firebaseUser?.email || '',
-        name: firebaseUser?.displayName || firebaseUser?.email?.split('@')[0] || 'مستخدم',
+        email: email || '',
+        name: name || email?.split('@')[0] || 'مستخدم',
         roles: []
       };
       console.log('[AUTH] Error fallback profile:', errorFallback);
       setUserProfile(errorFallback);
       setUserRoles([]);
     }
-  };
+  }, [fetchUserRoles, setupPresenceTracking]);
 
   useEffect(() => {
     let mounted = true;
     
-    // Set up Firebase auth state listener
-    console.log('[AUTH] Setting up Firebase auth state listener...');
-    const unsubscribe = onFirebaseAuthStateChange(async (firebaseUser) => {
-      console.log('=== [AUTH] Firebase auth state changed ===');
-      console.log('[AUTH] Timestamp:', new Date().toISOString());
-      console.log('[AUTH] Firebase user:', {
-        hasUser: !!firebaseUser,
-        userId: firebaseUser?.uid,
-        userEmail: firebaseUser?.email,
-        displayName: firebaseUser?.displayName
-      });
-      
-      if (!mounted) return;
-      
-      setUser(firebaseUser);
-      
-      if (firebaseUser) {
-        console.log('[AUTH] ✅ Firebase user authenticated');
-        console.log('[AUTH] Starting profile sync...');
+    // Set up Supabase auth state listener
+    console.log('[AUTH] Setting up Supabase auth state listener...');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('=== [AUTH] Supabase auth state changed ===');
+        console.log('[AUTH] Event:', event);
+        console.log('[AUTH] Session:', session ? 'exists' : 'null');
         
-        // Sync to Supabase
-        await syncUserToSupabase(firebaseUser);
-        await syncProfileWithDatabase(firebaseUser.uid, firebaseUser);
+        if (!mounted) return;
         
-        console.log('[AUTH] Profile sync completed');
-      } else {
-        console.log('[AUTH] ⚠️ No Firebase user - signed out');
-        setUserProfile(null);
-        setUserRoles([]);
-        setSession(null);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          console.log('[AUTH] ✅ User authenticated:', session.user.email);
+          await syncProfileWithDatabase(
+            session.user.id, 
+            session.user.email || '', 
+            session.user.user_metadata?.full_name || session.user.user_metadata?.name
+          );
+        } else {
+          console.log('[AUTH] ⚠️ No user - signed out');
+          setUserProfile(null);
+          setUserRoles([]);
 
-        // Clean up presence tracking
-        if (presenceChannel) {
-          if ((presenceChannel as any).heartbeatInterval) {
-            clearInterval((presenceChannel as any).heartbeatInterval);
+          // Clean up presence tracking
+          if (presenceChannel) {
+            if ((presenceChannel as any).heartbeatInterval) {
+              clearInterval((presenceChannel as any).heartbeatInterval);
+            }
+            await supabase.removeChannel(presenceChannel);
+            setPresenceChannel(null);
           }
-          await supabase.removeChannel(presenceChannel);
-          setPresenceChannel(null);
         }
+        
+        setLoading(false);
       }
-      
+    );
+    
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        syncProfileWithDatabase(
+          session.user.id,
+          session.user.email || '',
+          session.user.user_metadata?.full_name || session.user.user_metadata?.name
+        );
+      }
       setLoading(false);
     });
-    
-    // Initialize Firebase auth
-    const initializeAuth = () => {
-      console.log('=== [AUTH] Initializing Firebase authentication ===');
-      console.log('[AUTH] Current user:', firebaseAuth.currentUser?.email);
-      
-      if (firebaseAuth.currentUser && mounted) {
-        setUser(firebaseAuth.currentUser);
-        syncUserToSupabase(firebaseAuth.currentUser);
-        syncProfileWithDatabase(firebaseAuth.currentUser.uid, firebaseAuth.currentUser);
-      }
-      
-      setLoading(false);
-      console.log('[AUTH] ✅ Firebase auth initialized');
-    };
-    
-    initializeAuth();
 
     return () => {
       mounted = false;
-      unsubscribe();
+      subscription.unsubscribe();
 
       // Cleanup presence tracking
       if (presenceChannel) {
@@ -304,14 +293,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         supabase.removeChannel(presenceChannel);
       }
     };
-  }, [fetchUserRoles, setupPresenceTracking])
-
+  }, [syncProfileWithDatabase, presenceChannel]);
 
   const signUp = async (email: string, password: string, name: string, userType = 'customer', phone?: string) => {
     try {
       console.log('Frontend signup attempt - auto-confirming user')
       
-      // Use Supabase client with emailRedirectTo and auto-confirmation disabled
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -329,7 +316,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('User signed up successfully:', data.user?.email)
       
-      // Show welcome toast
       toast.success('مرحباً بك! تم إنشاء حسابك بنجاح', {
         description: 'يمكنك الآن تسجيل الدخول والاستمتاع بخدماتنا'
       })
@@ -347,8 +333,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       if (error) throw error
-      
-      // onAuthStateChange will handle the redirect
     } catch (error) {
       console.error('Sign in error:', error)
       throw error
@@ -382,11 +366,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase
           .from('user_presence')
           .delete()
-          .eq('user_id', user.uid);
+          .eq('user_id', user.id);
       }
 
-      const { error } = await firebaseSignOut()
-      if (error) throw error
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
 
       // Redirect to home after sign out
       setTimeout(() => {

@@ -1,40 +1,35 @@
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { signInWithGoogle } from '@/lib/firebase';
-import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 export function GoogleAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      console.log('🚀 [GOOGLE AUTH] Starting Firebase Google sign-in...');
+      console.log('🚀 [GOOGLE AUTH] Starting Supabase Google OAuth sign-in...');
       
-      const { user, error } = await signInWithGoogle();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
 
       if (error) {
         console.error('❌ [GOOGLE AUTH] Sign-in error:', error);
-        throw error;
+        toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
+        setIsLoading(false);
+        return;
       }
 
-      if (user) {
-        console.log('✅ [GOOGLE AUTH] Sign-in successful:', user.email);
-        const userName = user.displayName || user.email?.split('@')[0] || 'المستخدم';
-        
-        toast.success(`أهلاً بك، ${userName}!`, {
-          description: 'تم تسجيل الدخول بنجاح عبر Google',
-          duration: 3000
-        });
-        
-        // Redirect to home page
-        setTimeout(() => {
-          navigate('/');
-          setIsLoading(false);
-        }, 1000);
-      }
+      console.log('✅ [GOOGLE AUTH] Redirecting to Google...');
     } catch (error: any) {
       console.error('❌ [GOOGLE AUTH] Fatal error:', error);
       toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
