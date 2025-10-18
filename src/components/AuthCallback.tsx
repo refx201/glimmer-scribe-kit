@@ -1,117 +1,77 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Constants - No magic numbers!
-const REDIRECT_DELAY_SUCCESS = 1200; // ms - Time to show success message
-const REDIRECT_DELAY_ERROR = 2000; // ms - Time to show error message
+const REDIRECT_DELAY_SUCCESS = 1200;
+const REDIRECT_DELAY_ERROR = 2000;
 
-/**
- * AuthCallback Component
- * Single Responsibility: Exchange OAuth code for session
- * Clean Architecture: No business logic, just code exchange
- */
 export function AuthCallback() {
   const [status, setStatus] = useState<'working' | 'done' | 'error'>('working');
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
 
-    const exchangeCodeForSession = async () => {
+    const handleCallback = async () => {
       try {
-        console.log('🔐 [AUTH CALLBACK] OAuth callback initiated');
-        console.log('⏰ [AUTH CALLBACK] Timestamp:', new Date().toISOString());
-        console.log('🌐 [AUTH CALLBACK] URL:', window.location.href);
+        console.log('🔐 [AUTH CALLBACK] Processing OAuth callback...');
         
-        const url = new URL(window.location.href);
-        const code = url.searchParams.get('code');
-        const error_param = url.searchParams.get('error');
-        const error_description = url.searchParams.get('error_description');
-        
-        // Step 1: Check for OAuth errors
-        if (error_param) {
-          console.error('❌ [AUTH CALLBACK] OAuth provider error:', error_param);
-          if (!cancelled) {
-            setStatus('error');
-            toast.error(`خطأ في المصادقة: ${error_description || error_param}`);
-            setTimeout(() => (window.location.href = '/'), REDIRECT_DELAY_ERROR);
-          }
-          return;
-        }
-
-        // Step 2: Verify we have an OAuth code
-        if (!code) {
-          console.error('❌ [AUTH CALLBACK] No OAuth code in URL');
-          if (!cancelled) {
-            setStatus('error');
-            toast.error('خطأ في رابط المصادقة. يرجى المحاولة مرة أخرى.');
-            setTimeout(() => (window.location.href = '/'), REDIRECT_DELAY_ERROR);
-          }
-          return;
-        }
-
-        console.log('✅ [AUTH CALLBACK] OAuth code found, exchanging...');
-        
-        // Step 3: Exchange code for session
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('❌ [AUTH CALLBACK] Exchange failed:', error.message);
+          console.error('❌ [AUTH CALLBACK] Session error:', error);
           if (!cancelled) {
             setStatus('error');
-            toast.error('فشل تسجيل الدخول: ' + error.message);
-            setTimeout(() => (window.location.href = '/'), REDIRECT_DELAY_ERROR);
+            toast.error('فشل تسجيل الدخول');
+            setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
           }
           return;
         }
 
-        if (!data.session) {
-          console.error('❌ [AUTH CALLBACK] No session in response');
+        if (!session) {
+          console.error('❌ [AUTH CALLBACK] No session found');
           if (!cancelled) {
             setStatus('error');
-            toast.error('تعذر إنشاء الجلسة');
-            setTimeout(() => (window.location.href = '/'), REDIRECT_DELAY_ERROR);
+            toast.error('لم يتم العثور على جلسة');
+            setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
           }
           return;
         }
 
-        // Step 4: Success!
         console.log('✅ [AUTH CALLBACK] Session established');
-        console.log('👤 [AUTH CALLBACK] User:', data.session.user.email);
+        console.log('👤 [AUTH CALLBACK] User:', session.user.email);
         
         if (!cancelled) {
-          const userName = data.session.user.user_metadata?.name || 
-                          data.session.user.user_metadata?.full_name || 
-                          data.session.user.email?.split('@')[0] || 
+          const userName = session.user.user_metadata?.name || 
+                          session.user.user_metadata?.full_name || 
+                          session.user.email?.split('@')[0] || 
                           'المستخدم';
           
           setStatus('done');
           toast.success(`أهلاً بك، ${userName}!`, {
-            description: 'تم تسجيل الدخول بنجاح عبر Google',
+            description: 'تم تسجيل الدخول بنجاح',
             duration: 3000
           });
           
-          console.log('🚀 [AUTH CALLBACK] Redirecting to profile...');
-          setTimeout(() => {
-            window.location.href = '/profile';
-          }, REDIRECT_DELAY_SUCCESS);
+          setTimeout(() => navigate('/profile'), REDIRECT_DELAY_SUCCESS);
         }
       } catch (error: any) {
         console.error('❌ [AUTH CALLBACK] Fatal error:', error);
         if (!cancelled) {
           setStatus('error');
           toast.error('حدث خطأ غير متوقع');
-          setTimeout(() => (window.location.href = '/'), REDIRECT_DELAY_ERROR);
+          setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
         }
       }
     };
 
-    exchangeCodeForSession();
+    handleCallback();
     
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [navigate]);
 
   return (
     <main className="min-h-[60vh] flex items-center justify-center">
