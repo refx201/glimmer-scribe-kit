@@ -60,90 +60,39 @@ const CompactProductCard = memo(({ product, onNavigate }: CompactProductCardProp
 
   return (
     <Card 
-      className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-0 bg-white overflow-hidden cursor-pointer h-full flex flex-col"
+      className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-200 bg-white overflow-hidden cursor-pointer h-full flex flex-col rounded-2xl"
       onClick={handleNavigateToProduct}
     >
-      {/* Product Badge */}
-      {(product.badge || product.is_hot_sale) && (
-        <div className="absolute top-2 right-2 z-20">
-          <Badge className={`${product.badgeColor || (product.is_hot_sale ? 'bg-red-600' : 'bg-blue-600')} text-white text-xs`}>
-            {product.badge || (product.is_hot_sale ? 'عرض ساخن' : 'مميز')}
-          </Badge>
-        </div>
-      )}
-      
-      {/* Discount Badge */}
-      {product.discount > 0 && (
-        <div className="absolute top-2 left-2 z-20">
-          <Badge className="bg-red-600 text-white text-xs">
-            <Percent className="h-2 w-2 ml-1" />
-            {product.discount}%
-          </Badge>
-        </div>
-      )}
-
       {/* Product Image */}
-      <div className="relative aspect-[3/4] mb-3 rounded-lg overflow-hidden bg-gray-50">
+      <div className="relative bg-gray-50 p-6 flex items-center justify-center" style={{ minHeight: '280px' }}>
         <ImageLoader
           src={getOptimizedImageUrl(product.image || '', 300, 400)}
           alt={product.name}
-          className="w-full h-full object-contain p-8"
+          className="w-full h-full object-contain max-h-64"
           fallbackSrc={getProductImageFallback('هواتف ذكية')}
         />
         
-        {/* Quick Actions */}
-        <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <Button 
-            size="sm" 
-            onClick={handleNavigateToProduct}
-            className="w-6 h-6 bg-white/90 text-gray-600 hover:bg-white p-0"
-            title="عرض التفاصيل"
-          >
-            <Eye className="h-3 w-3" />
-          </Button>
-          <Button 
-            size="sm" 
-            onClick={handleToggleFavorite}
-            className="w-6 h-6 bg-white/90 text-gray-600 hover:bg-white hover:text-red-500 p-0"
-            title="أضف للمفضلة"
-          >
-            <Heart className="h-3 w-3" />
-          </Button>
-        </div>
-        
-        {/* Stock Indicator */}
-        {product.stockCount && product.stockCount <= 10 && (
-          <div className="absolute bottom-2 left-2">
-            <Badge className="bg-orange-500 text-white text-xs">
-              باقي {product.stockCount}
+        {/* Discount Badge */}
+        {product.discount > 0 && (
+          <div className="absolute top-3 right-3 z-20">
+            <Badge className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+              -{product.discount}%
             </Badge>
           </div>
         )}
       </div>
 
       {/* Product Info */}
-      <CardContent className="p-4 flex-1 flex flex-col">
-        {/* Rating */}
-        {product.rating && (
-          <div className="flex items-center gap-1 mb-2">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className={`h-3 w-3 ${i < Math.floor(product.rating!) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
-              ))}
-            </div>
-            <span className="text-xs text-gray-500">({product.reviewsCount || 0})</span>
-          </div>
-        )}
-        
+      <CardContent className="p-4 flex-1 flex flex-col bg-white">
         {/* Product Title */}
-        <h3 className="font-semibold text-sm text-gray-900 mb-2 line-clamp-2 leading-tight">
+        <h3 className="font-semibold text-base text-gray-900 mb-3 line-clamp-2 min-h-[48px]">
           {product.name}
         </h3>
         
         {/* Price Section */}
-        <div className="mb-3 flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-lg font-bold text-red-600">
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="text-2xl font-bold text-blue-600">
               {product.sale_price.toLocaleString()} ₪
             </span>
             {product.original_price > product.sale_price && (
@@ -153,19 +102,31 @@ const CompactProductCard = memo(({ product, onNavigate }: CompactProductCardProp
             )}
           </div>
           {product.original_price > product.sale_price && (
-            <div className="text-xs font-medium text-green-600">
-              وفر {(product.original_price - product.sale_price).toLocaleString()} ₪
+            <div className="text-xs text-gray-600">
+              متوفر بـ 4 دفعات
             </div>
           )}
         </div>
+
+        {/* Stock Progress Bar */}
+        {product.stockCount && product.stockCount <= 20 && (
+          <div className="mb-3">
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${Math.min((product.stockCount / 20) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
         
         {/* Action Button */}
         <Button 
           onClick={handleAddToCart}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 mt-auto"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 mt-auto rounded-lg"
         >
-          <ShoppingCart className="h-3 w-3 ml-1" />
-          أضف للسلة
+          <ShoppingCart className="h-4 w-4 ml-2" />
+          أضف الآن
         </Button>
       </CardContent>
     </Card>
