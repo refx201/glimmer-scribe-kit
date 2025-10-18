@@ -10,7 +10,6 @@ interface AuthContextType {
   loading: boolean
   signUp: (email: string, password: string, name: string, userType?: string, phone?: string) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
-  signInWithGoogle: () => Promise<void>
   signInWithApple: () => Promise<void>
   signOut: () => Promise<void>
   userProfile: any
@@ -383,37 +382,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signInWithGoogle = async () => {
-    try {
-      const currentPath = window.location.pathname;
-      const redirectPath = currentPath === '/login' || currentPath === '/signup' ? '/' : currentPath;
-
-      const host = window.location.hostname;
-      const isProdDomain = host === 'procell.app' || host === 'www.procell.app';
-      const redirectBase = isProdDomain ? 'https://procell.app' : window.location.origin;
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${redirectBase}${redirectPath}`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      console.error('Google sign in error:', error);
-      const msg = error?.message?.includes('Can only be used on')
-        ? 'تسجيل Google يعمل فقط على النطاق procell.app. افتح الموقع على https://procell.app وحاول مرة أخرى.'
-        : 'فشل تسجيل الدخول عبر Google';
-      toast.error(msg);
-      throw error;
-    }
-  }
-
   const signInWithApple = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -467,7 +435,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signUp,
     signIn,
-    signInWithGoogle,
     signInWithApple,
     signOut,
     userProfile,

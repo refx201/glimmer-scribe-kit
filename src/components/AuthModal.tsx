@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useAuth } from '../lib/auth-context';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
-import { GoogleAuthButton } from './GoogleAuthButton';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -15,7 +14,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const { signIn, signUp, signInWithGoogle, signInWithApple, loading } = useAuth();
+  const { signIn, signUp, signInWithApple, loading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
   
@@ -92,15 +91,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle();
-    } catch (error: any) {
-      console.error('Google sign in error:', error);
-      toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
-    }
-  };
-
   const handleAppleSignIn = async () => {
     try {
       await signInWithApple();
@@ -129,19 +119,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </TabsList>
 
           <TabsContent value="signin" className="space-y-4">
-            <div className="flex justify-center mb-4">
-              <GoogleAuthButton />
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">أو</span>
-              </div>
-            </div>
-
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="signin-email">البريد الإلكتروني</Label>
@@ -195,19 +172,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </TabsContent>
 
           <TabsContent value="signup" className="space-y-4">
-            <div className="flex justify-center mb-4">
-              <GoogleAuthButton />
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">أو</span>
-              </div>
-            </div>
-
             <form onSubmit={handleSignUp} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="signup-name">الاسم الكامل</Label>
