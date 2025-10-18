@@ -21,7 +21,10 @@ export function NotificationPrompt() {
       if (window.OneSignal) {
         try {
           const isPushSupported = await window.OneSignal.Notifications.isPushSupported();
-          const permission = await window.OneSignal.Notifications.permissionNative;
+          const permission = window.OneSignal.Notifications.permissionNative;
+          
+          const dismissed = sessionStorage.getItem('notificationPromptDismissed');
+          if (dismissed) return;
           
           if (isPushSupported && permission === 'default') {
             // Show prompt after 3 seconds if not yet asked

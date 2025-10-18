@@ -234,13 +234,15 @@ function ProCellApp() {
   const initializeData = useMemo(() => {
     return async () => {
       try {
+        // Only attempt to call the Express seed endpoint on localhost
+        if (window.location.hostname !== 'localhost') return;
         await apiCall('/init-data', { method: 'POST' });
         console.log('✅ Sample data initialized successfully');
       } catch (error) {
         console.warn('⚠️ Data initialization failed. This is normal if data already exists or server is not running.', error);
         
         // Check if it's a network error
-        if (error.message.includes('Failed to fetch')) {
+        if ((error as any).message?.includes('Failed to fetch')) {
           console.info('💡 Make sure the Express server is running on port 3001');
           console.info('📝 Run these commands to start the server:');
           console.info('   cd server');
@@ -423,7 +425,7 @@ function ProCellApp() {
         </Routes>
       </main>
       <Footer onNavigate={navigateToPage} />
-      <NetworkStatus showServerStatus={true} />
+      <NetworkStatus showServerStatus={typeof window !== 'undefined' && window.location.hostname === 'localhost'} />
       <ServerStatusIndicator />
       <NotificationPrompt />
       <Toaster position="top-right" />
