@@ -24,6 +24,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Process OAuth redirect if hash params exist
+    const processOAuthRedirect = async () => {
+      if (window.location.hash && window.location.hash.includes('access_token')) {
+        try {
+          console.log("Processing OAuth redirect with hash params");
+          
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          
+          if (!accessToken) {
+            throw new Error("No access token found in URL");
+          }
+          
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: hashParams.get('refresh_token') || "",
+          });
+          
+          if (error) throw error;
+          
+          if (data.session) {
+            console.log("Successfully established session after OAuth redirect");
+            window.history.replaceState(null, "", window.location.pathname);
+          }
+        } catch (error) {
+          console.error("Error processing OAuth redirect:", error);
+          toast.error('فشل إكمال تسجيل الدخول عبر Google');
+        }
+      }
+    };
+
+    processOAuthRedirect();
+
     // Set up auth state listener FIRST (before checking for existing session)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -141,21 +174,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentPath = window.location.pathname;
       const redirectTo = currentPath === '/login' || currentPath === '/signup' ? '/' : currentPath;
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}${redirectTo}`,
           queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
+            prompt: 'select_account',
           }
         }
       });
       
       if (error) throw error;
       
-      // After successful OAuth, the user will be redirected back to the site
-      // The auth state change listener will handle the success message
     } catch (error) {
       console.error('Google sign in error:', error);
       toast.error('فشل تسجيل الدخول عبر Google');
