@@ -448,7 +448,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('[AUTH CONTEXT] Current location:', window.location.href);
       console.log('[AUTH CONTEXT] Origin:', window.location.origin);
       
-      const redirectUrl = `${window.location.origin}/auth/callback`;
+      // IMPORTANT: Use production URL explicitly to avoid localhost issues
+      const redirectUrl = 'https://procell.app/auth/callback';
       console.log('[AUTH CONTEXT] Redirect URL:', redirectUrl);
       console.log('[AUTH CONTEXT] Supabase URL:', 'https://npbblbwuoaqcsysrzjiq.supabase.co');
       
