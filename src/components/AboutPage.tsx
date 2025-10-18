@@ -489,15 +489,15 @@ export function AboutPage() {
                           <Building className="h-3 w-3 ml-1" />
                           {supplier.category}
                         </Badge>
-                        <div className="flex items-center justify-center gap-3 mb-4">
+                        <div className="flex items-center justify-center gap-3 mb-6">
                           {supplier.logo_url ? (
                             <img
                               src={supplier.logo_url}
                               alt={supplier.name}
-                              className="h-20 md:h-24 w-auto object-contain"
+                              className="h-32 md:h-40 lg:h-48 w-auto max-w-md object-contain"
                             />
                           ) : (
-                            <span className="text-4xl">🏢</span>
+                            <span className="text-6xl">🏢</span>
                           )}
                         </div>
                         <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
