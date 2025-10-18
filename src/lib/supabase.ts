@@ -1,19 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabase as supabaseClient } from '@/integrations/supabase/client'
 
-const SUPABASE_URL = "https://npbblbwuoaqcsysrzjiq.supabase.co"
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wYmJsYnd1b2FxY3N5c3J6amlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzUxMzU3OTQsImV4cCI6MjA1MDcxMTc5NH0.d5j3bCX2izoOeMwhXoJwV34qHLcZxnRclPONsQBca-s"
-
-export const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  {
-    auth: {
-      storage: localStorage,
-      persistSession: true,
-      autoRefreshToken: true,
-    }
-  }
-)
+export const supabase = supabaseClient as any
 
 // API base URL - Updated for Express server
 export const API_BASE_URL = typeof window !== 'undefined' 
