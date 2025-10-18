@@ -444,58 +444,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       console.log('=== [AUTH CONTEXT] Starting Google OAuth flow ===');
-      console.log('[AUTH CONTEXT] Timestamp:', new Date().toISOString());
-      console.log('[AUTH CONTEXT] Current location:', window.location.href);
-      console.log('[AUTH CONTEXT] Origin:', window.location.origin);
       
-      // IMPORTANT: Use production URL explicitly to avoid localhost issues
-      const redirectUrl = 'https://procell.app/auth/callback';
-      console.log('[AUTH CONTEXT] Redirect URL:', redirectUrl);
-      console.log('[AUTH CONTEXT] Supabase URL:', 'https://npbblbwuoaqcsysrzjiq.supabase.co');
-      
-      console.log('[AUTH CONTEXT] Calling supabase.auth.signInWithOAuth...');
-      const oauthStartTime = Date.now();
-      
-      const { error, data } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
-          },
-          skipBrowserRedirect: false
+            prompt: 'select_account',
+          }
         }
       });
       
-      const oauthDuration = Date.now() - oauthStartTime;
-      console.log('[AUTH CONTEXT] OAuth call completed in:', oauthDuration, 'ms');
-      console.log('[AUTH CONTEXT] OAuth response:', {
-        hasError: !!error,
-        hasData: !!data,
-        url: data?.url,
-        provider: data?.provider
-      });
-      
       if (error) {
-        console.error('[AUTH CONTEXT] ❌ Google OAuth error:', {
-          message: error.message,
-          status: error.status,
-          name: error.name,
-          stack: error.stack
-        });
+        console.error('[AUTH CONTEXT] Google OAuth error:', error);
         throw error;
       }
-      
-      console.log('[AUTH CONTEXT] ✅ Google OAuth redirect initiated');
-      console.log('[AUTH CONTEXT] Redirect URL:', data?.url);
-      console.log('[AUTH CONTEXT] Browser should redirect to Google now...');
-    } catch (error) {
-      console.error('[AUTH CONTEXT] ❌ Google sign in error:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
+    } catch (error: any) {
+      console.error('[AUTH CONTEXT] Google sign in error:', error);
       toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
       throw error;
     }
