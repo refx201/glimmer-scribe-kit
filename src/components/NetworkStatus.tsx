@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Wifi, WifiOff, Server, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
+import { API_BASE_URL } from '@/lib/supabase';
+
+const SERVER_URL = API_BASE_URL.replace('/api/v1', '');
 
 interface NetworkStatusProps {
   showServerStatus?: boolean;
@@ -37,7 +40,7 @@ export function NetworkStatus({ showServerStatus = true }: NetworkStatusProps) {
 
     const checkServerStatus = async () => {
       try {
-        const response = await fetch('http://localhost:3001/health', {
+        const response = await fetch(`${SERVER_URL}/health`, {
           method: 'GET',
           signal: AbortSignal.timeout(5000) // 5 second timeout
         });
@@ -104,7 +107,7 @@ export function NetworkStatus({ showServerStatus = true }: NetworkStatusProps) {
               <p className="font-semibold text-blue-800 mb-1">للمطورين:</p>
               <ol className="list-decimal list-inside text-blue-700 space-y-1">
                 <li>تأكد من تشغيل الخادم: <code className="bg-blue-100 px-1 rounded">cd server && npm run dev</code></li>
-                <li>تحقق من الرابط: <a href="http://localhost:3001/health" target="_blank" rel="noopener noreferrer" className="underline">http://localhost:3001/health</a></li>
+                <li>تحقق من الرابط: <a href={`${SERVER_URL}/health`} target="_blank" rel="noopener noreferrer" className="underline">{`${SERVER_URL}/health`}</a></li>
                 <li>راجع ملف <code className="bg-blue-100 px-1 rounded">START_SERVER.md</code> للتعليمات الكاملة</li>
               </ol>
             </div>

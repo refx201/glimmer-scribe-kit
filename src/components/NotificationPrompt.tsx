@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
+import { toast } from 'sonner';
 
 declare global {
   interface Window {
@@ -12,6 +13,7 @@ declare global {
 export function NotificationPrompt() {
   const [isVisible, setIsVisible] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
 
   useEffect(() => {
     // Check if OneSignal is available and notification permission
@@ -45,17 +47,55 @@ export function NotificationPrompt() {
 
   const handleAllow = async () => {
     try {
-      if (window.OneSignal) {
-        await window.OneSignal.Notifications.requestPermission();
-        const permission = await window.OneSignal.Notifications.permissionNative;
-        
-        if (permission === 'granted') {
+      setIsRequesting(true);
+
+      // Prefer OneSignal flow if available
+      if (window.OneSignal?.Notifications) {
+        const supported = await window.OneSignal.Notifications.isPushSupported?.();
+        if (supported === false) {
+          toast.error('الإشعارات غير مدعومة على هذا الجهاز/المتصفح');
+          setIsVisible(false);
+          return;
+        }
+
+        const result = await window.OneSignal.Notifications.requestPermission();
+        const permission = window.OneSignal.Notifications.permissionNative;
+
+        if (permission === 'granted' || result === 'granted') {
           setIsSubscribed(true);
           setIsVisible(false);
+          toast.success('تم تفعيل الإشعارات بنجاح');
+          return;
+        }
+
+        if (permission === 'denied' || result === 'denied') {
+          toast.error('تم رفض الإذن بالإشعارات من المتصفح');
+          setIsVisible(false);
+          return;
         }
       }
+
+      // Fallback to native Notifications API
+      if ('Notification' in window && typeof Notification.requestPermission === 'function') {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          setIsSubscribed(true);
+          setIsVisible(false);
+          toast.success('تم تفعيل الإشعارات بنجاح');
+        } else {
+          toast.error('لم يتم تفعيل الإشعارات');
+          setIsVisible(false);
+        }
+        return;
+      }
+
+      toast.error('الإشعارات غير مدعومة في هذا المتصفح');
+      setIsVisible(false);
     } catch (error) {
       console.error('Error requesting notification permission:', error);
+      toast.error('حدث خطأ أثناء طلب الإذن');
+    } finally {
+      setIsRequesting(false);
     }
   };
 
@@ -106,10 +146,12 @@ export function NotificationPrompt() {
         <div className="flex flex-col sm:flex-row gap-2">
           <Button
             onClick={handleAllow}
-            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-12"
+            disabled={isRequesting}
+            aria-busy={isRequesting}
+            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-12 disabled:opacity-70"
           >
             <Bell className="ml-2 h-4 w-4" />
-            السماح بالإشعارات
+            {isRequesting ? 'جارٍ التفعيل...' : 'السماح بالإشعارات'}
           </Button>
           <Button
             onClick={handleDismiss}
