@@ -3,23 +3,27 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
-// Constants - No magic numbers!
-const REDIRECT_DOMAIN = typeof window !== 'undefined' ? window.location.origin : 'https://procell.app';
-const CALLBACK_PATH = '/auth/callback';
-
 export function GoogleAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      console.log('🚀 [GOOGLE BUTTON] Starting Google OAuth flow...');
-      console.log('🌐 [GOOGLE BUTTON] Redirect URL:', `${REDIRECT_DOMAIN}${CALLBACK_PATH}`);
+      
+      // Determine full redirect URL based on environment
+      const isLocalhost = window.location.hostname === 'localhost';
+      const redirectUrl = isLocalhost 
+        ? 'http://localhost:3000/auth/callback'
+        : 'https://procell.app/auth/callback';
+      
+      console.log('🚀 [GOOGLE AUTH] Starting OAuth flow...');
+      console.log('🌐 [GOOGLE AUTH] Redirect URL:', redirectUrl);
+      console.log('🏠 [GOOGLE AUTH] Environment:', isLocalhost ? 'localhost' : 'production');
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${REDIRECT_DOMAIN}${CALLBACK_PATH}`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

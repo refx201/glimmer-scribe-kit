@@ -451,9 +451,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signInWithGoogle = async () => {
-    // This method is no longer used - GoogleAuthButton handles OAuth directly
-    // Keeping for backward compatibility
-    console.log('⚠️ [AUTH CONTEXT] signInWithGoogle called - use GoogleAuthButton instead');
+    try {
+      const isLocalhost = window.location.hostname === 'localhost';
+      const redirectUrl = isLocalhost 
+        ? 'http://localhost:3000/auth/callback'
+        : 'https://procell.app/auth/callback';
+        
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      })
+      if (error) throw error
+      
+      // Toast will be shown after redirect in the auth state change listener
+    } catch (error) {
+      console.error('Google sign in error:', error)
+      toast.error('فشل تسجيل الدخول عبر Google')
+      throw error
+    }
   }
 
   const signInWithApple = async () => {

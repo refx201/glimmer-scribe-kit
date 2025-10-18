@@ -54,7 +54,7 @@ export function AuthCallback() {
             duration: 3000
           });
           
-          setTimeout(() => navigate('/profile'), REDIRECT_DELAY_SUCCESS);
+          setTimeout(() => navigate('/'), REDIRECT_DELAY_SUCCESS);
         }
       } catch (error: any) {
         console.error('❌ [AUTH CALLBACK] Fatal error:', error);
