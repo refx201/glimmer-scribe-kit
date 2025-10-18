@@ -56,7 +56,7 @@ export function AdminSections() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setContactMessages(data || []);
+      setContactMessages(data as any || []);
     } catch (error: any) {
       console.error('Error fetching contact messages:', error);
       toast.error('فشل تحميل رسائل التواصل');
@@ -75,8 +75,8 @@ export function AdminSections() {
     try {
       const { error } = await supabase
         .from('contact_messages')
-        .update({ status: newStatus })
-        .eq('id', id);
+        .update({ status: newStatus } as any)
+        .eq('id', id as any);
 
       if (error) throw error;
       

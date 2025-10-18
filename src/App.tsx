@@ -415,6 +415,7 @@ function ProCellApp() {
               <PromoCodeOrdersPage />
             </Suspense>
           } />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/repair-code" element={
             <Suspense fallback={<PageLoader />}>
               <RepairCodeRedeemPage />

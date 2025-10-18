@@ -471,7 +471,7 @@ function DeviceEvaluationForm() {
           customer_email: form.contactInfo.email,
           customer_location: form.contactInfo.location,
           status: 'pending'
-        }])
+        } as any])
         .select()
         .single();
 

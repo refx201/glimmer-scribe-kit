@@ -41,7 +41,7 @@ export function DatabaseHeroCarousel({ onNavigate }: DatabaseHeroCarouselProps) 
       const { data, error } = await supabase
         .from('sliding_photos')
         .select('*')
-        .eq('is_active', true)
+        .eq('is_active', true as any)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -182,7 +182,7 @@ export function DatabaseHeroCarousel({ onNavigate }: DatabaseHeroCarouselProps) 
         }}
       >
         <CarouselContent>
-          {slides.map((slide) => (
+          {slides.map((slide: any) => (
             <CarouselItem key={slide.id}>
               <Card 
                 className="relative h-screen overflow-hidden border-0 rounded-none cursor-pointer group"

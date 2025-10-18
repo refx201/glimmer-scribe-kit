@@ -113,7 +113,7 @@ export function ContactPage() {
           message: formData.message,
           status: 'new',
           inquiry_type: formData.inquiryType
-        }])
+        } as any])
         .select()
         .single();
 
@@ -125,8 +125,8 @@ export function ContactPage() {
           body: {
             type: 'contact',
             data: {
-              ...data,
-              created_at: new Date(data.created_at).toISOString()
+              ...(data as any),
+              created_at: new Date((data as any).created_at).toISOString()
             }
           }
         });

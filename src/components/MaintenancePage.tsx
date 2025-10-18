@@ -59,7 +59,7 @@ export function MaintenancePage() {
       const { data, error } = await supabase
         .from('maintenance_services')
         .select('*')
-        .eq('is_active', true)
+        .eq('is_active', true as any)
         .order('display_order', { ascending: true })
         .order('created_at', { ascending: false });
 
@@ -69,7 +69,7 @@ export function MaintenancePage() {
   });
 
   // Transform database services to match the component format
-  const repairServices = dbServices.map(service => ({
+  const repairServices = dbServices.map((service: any) => ({
     id: service.id,
     icon: <Monitor className="h-8 w-8" />,
     title: service.title,

@@ -117,7 +117,7 @@ export function TradeInPage() {
           customer_name: requestData.customer_name,
           customer_phone: requestData.customer_phone,
           status: 'pending'
-        }])
+        } as any])
         .select()
         .single();
       
@@ -129,8 +129,8 @@ export function TradeInPage() {
           body: {
             type: 'trade_in',
             data: {
-              ...data,
-              created_at: new Date(data.created_at).toISOString()
+              ...(data as any),
+              created_at: new Date((data as any).created_at).toISOString()
             }
           }
         });

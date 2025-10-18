@@ -65,7 +65,7 @@ export function CartSidebar() {
         .from('promo_codes')
         .select('*')
         .eq('code', promoCode.toUpperCase())
-        .eq('is_active', true)
+        .eq('is_active', true as any)
         .maybeSingle();
 
       console.log('✅ Promo data:', promoData);

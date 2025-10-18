@@ -38,7 +38,7 @@ export function AdditionalServicesDialog() {
           service_type: 'additional_services',
           ...form,
           status: 'pending'
-        }])
+        } as any])
         .select()
         .single();
 
@@ -49,7 +49,7 @@ export function AdditionalServicesDialog() {
         await supabase.functions.invoke('send-telegram-notification', {
           body: {
             type: 'service_request',
-            data: { ...newRequest, service_name: 'خدمات إضافية' }
+            data: { ...(newRequest as any), service_name: 'خدمات إضافية' }
           }
         });
       } catch (notifError) {
@@ -173,7 +173,7 @@ export function RepairServicesDialog() {
           service_type: 'repair_services',
           ...form,
           status: 'pending'
-        }])
+        } as any])
         .select()
         .single();
 
@@ -184,7 +184,7 @@ export function RepairServicesDialog() {
         await supabase.functions.invoke('send-telegram-notification', {
           body: {
             type: 'service_request',
-            data: { ...newRequest, service_name: 'خدمات الإصلاح' }
+            data: { ...(newRequest as any), service_name: 'خدمات الإصلاح' }
           }
         });
       } catch (notifError) {

@@ -42,8 +42,8 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
       const { data: promoData, error: promoError } = await supabase
         .from("promo_codes")
         .select("*")
-        .eq("code", promoCode.toUpperCase())
-        .eq("is_active", true)
+        .eq("code", promoCode.toUpperCase() as any)
+        .eq("is_active", true as any)
         .maybeSingle();
 
       if (promoError) throw promoError;
@@ -53,17 +53,19 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
         return;
       }
 
+      const promoId = (promoData as any).id;
+
       // Fetch brand-specific discounts
       const { data: brandDiscounts } = await supabase
         .from("promo_code_brand_discounts")
         .select("brand_id, discount_percentage")
-        .eq("promo_code_id", promoData.id);
+        .eq("promo_code_id", promoId as any);
 
       // Fetch package-specific discounts
       const { data: packageDiscounts } = await supabase
         .from("promo_code_package_discounts")
         .select("package_id, discount_percentage")
-        .eq("promo_code_id", promoData.id);
+        .eq("promo_code_id", promoId as any);
 
       // Check if any cart items match the promo code
       let hasMatch = false;
@@ -71,19 +73,19 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
 
       // Check if any items have matching brands
       if (brandDiscounts && brandDiscounts.length > 0) {
-        const brandIds = brandDiscounts.map(bd => bd.brand_id);
+        const brandIds = (brandDiscounts as any[]).map(bd => bd.brand_id);
         hasMatch = items.some(item => item.brandId && brandIds.includes(item.brandId));
         if (hasMatch) {
-          maxDiscount = Math.max(...brandDiscounts.map(bd => bd.discount_percentage));
+          maxDiscount = Math.max(...(brandDiscounts as any[]).map(bd => bd.discount_percentage));
         }
       }
 
       // Check if any items are packages
       if (!hasMatch && packageDiscounts && packageDiscounts.length > 0) {
-        const packageIds = packageDiscounts.map(pd => pd.package_id);
+        const packageIds = (packageDiscounts as any[]).map(pd => pd.package_id);
         hasMatch = items.some(item => packageIds.includes(item.productId));
         if (hasMatch) {
-          maxDiscount = Math.max(...packageDiscounts.map(pd => pd.discount_percentage));
+          maxDiscount = Math.max(...(packageDiscounts as any[]).map(pd => pd.discount_percentage));
         }
       }
 
@@ -93,7 +95,7 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
         return;
       }
 
-      setAppliedPromo({ code: promoData.code, discount: maxDiscount });
+      setAppliedPromo({ code: (promoData as any).code, discount: maxDiscount });
       toast({ title: "تم تطبيق الكود!", description: `حصلت على خصم ${maxDiscount}%!` });
     } catch (error) {
       toast({ variant: "destructive", title: "خطأ", description: "فشل التحقق من الكود" });
@@ -120,7 +122,7 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
       const { data: paymentMethod } = await supabase
         .from('payment_methods')
         .select('name, type')
-        .eq('id', selectedPaymentMethodId)
+        .eq('id', selectedPaymentMethodId as any)
         .maybeSingle();
       
       // Validate all items exist before creating order
@@ -132,7 +134,7 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
         const packageResult = await supabase
           .from("packages")
           .select('id')
-          .eq('id', item.productId)
+          .eq('id', item.productId as any)
           .maybeSingle();
           
         if (packageResult.data) {
@@ -141,7 +143,7 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
           const productResult = await supabase
             .from("products")
             .select('id')
-            .eq('id', item.productId)
+            .eq('id', item.productId as any)
             .maybeSingle();
           checkError = productResult.error;
           productExists = !!productResult.data;
@@ -163,24 +165,26 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
       let packageDiscounts: any[] = [];
       
       if (appliedPromo) {
-        const promoId = (await supabase
+        const promoResult = await supabase
           .from("promo_codes")
           .select("id")
-          .eq("code", appliedPromo.code)
-          .maybeSingle()).data?.id;
+          .eq("code", appliedPromo.code as any)
+          .maybeSingle();
+        
+        const promoId = promoResult.data ? (promoResult.data as any).id : null;
           
-        if (promoId) {
-          const { data: brandData } = await supabase
-            .from("promo_code_brand_discounts")
-            .select("brand_id, discount_percentage")
-            .eq("promo_code_id", promoId);
-          brandDiscounts = brandData || [];
-          
-          const { data: packageData } = await supabase
-            .from("promo_code_package_discounts")
-            .select("package_id, discount_percentage")
-            .eq("promo_code_id", promoId);
-          packageDiscounts = packageData || [];
+      if (promoId) {
+        const { data: brandData } = await supabase
+          .from("promo_code_brand_discounts")
+          .select("brand_id, discount_percentage")
+          .eq("promo_code_id", promoId as any);
+        brandDiscounts = (brandData as any[]) || [];
+        
+        const { data: packageData } = await supabase
+          .from("promo_code_package_discounts")
+          .select("package_id, discount_percentage")
+          .eq("promo_code_id", promoId as any);
+        packageDiscounts = (packageData as any[]) || [];
         }
       }
 
@@ -250,7 +254,7 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
         subtotal: subtotal,
         totalDiscount: discount,
         appliedPromo: appliedPromo,
-        paymentMethod: paymentMethod || { name: 'Cash on Delivery' }
+        paymentMethod: paymentMethod as any || { name: 'Cash on Delivery' }
       }, orderItems);
       
       if (!notificationResult.success) {
@@ -282,33 +286,39 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
   const calculateDiscount = async () => {
     if (!appliedPromo) return 0;
 
-    try {
+      try {
       // Fetch brand-specific discounts for this promo code
+      const promoResult1 = await supabase
+        .from("promo_codes")
+        .select("id")
+        .eq("code", appliedPromo.code as any)
+        .maybeSingle();
+      const promoId1 = promoResult1.data ? (promoResult1.data as any).id : "";
+      
       const { data: brandDiscounts } = await supabase
         .from("promo_code_brand_discounts")
         .select("brand_id, discount_percentage")
-        .eq("promo_code_id", (await supabase
-          .from("promo_codes")
-          .select("id")
-          .eq("code", appliedPromo.code)
-          .maybeSingle()).data?.id || "");
+        .eq("promo_code_id", promoId1 as any);
 
       // Fetch package-specific discounts for this promo code
+      const promoResult2 = await supabase
+        .from("promo_codes")
+        .select("id")
+        .eq("code", appliedPromo.code as any)
+        .maybeSingle();
+      const promoId2 = promoResult2.data ? (promoResult2.data as any).id : "";
+      
       const { data: packageDiscounts } = await supabase
         .from("promo_code_package_discounts")
         .select("package_id, discount_percentage")
-        .eq("promo_code_id", (await supabase
-          .from("promo_codes")
-          .select("id")
-          .eq("code", appliedPromo.code)
-          .maybeSingle()).data?.id || "");
+        .eq("promo_code_id", promoId2 as any);
 
       let discountAmount = 0;
 
       // Apply brand-specific discounts
       if (brandDiscounts && brandDiscounts.length > 0) {
         items.forEach(item => {
-          const brandDiscount = brandDiscounts.find(bd => bd.brand_id === item.brandId);
+          const brandDiscount = (brandDiscounts as any[]).find(bd => bd.brand_id === item.brandId);
           if (brandDiscount) {
             const itemPrice = typeof item.price === 'number' ? item.price : Number(item.price);
             const itemQuantity = typeof item.quantity === 'number' ? item.quantity : Number(item.quantity || 1);
@@ -320,7 +330,7 @@ const Cart = ({ open, onOpenChange }: CartProps) => {
       // Apply package-specific discounts
       if (packageDiscounts && packageDiscounts.length > 0) {
         items.forEach(item => {
-          const packageDiscount = packageDiscounts.find(pd => pd.package_id === item.productId || pd.package_id === item.packageId);
+          const packageDiscount = (packageDiscounts as any[]).find(pd => pd.package_id === item.productId || pd.package_id === item.packageId);
           if (packageDiscount) {
             const itemPrice = typeof item.price === 'number' ? item.price : Number(item.price);
             const itemQuantity = typeof item.quantity === 'number' ? item.quantity : Number(item.quantity || 1);

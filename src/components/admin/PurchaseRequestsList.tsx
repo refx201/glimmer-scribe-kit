@@ -34,7 +34,7 @@ export function PurchaseRequestsList() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRequests(data || []);
+      setRequests(data as any || []);
     } catch (error: any) {
       console.error('Error fetching device evaluation requests:', error);
       toast.error('فشل تحميل طلبات التقييم');
@@ -51,8 +51,8 @@ export function PurchaseRequestsList() {
     try {
       const { error } = await supabase
         .from('device_evaluation_requests')
-        .update({ status: newStatus })
-        .eq('id', id);
+        .update({ status: newStatus } as any)
+        .eq('id', id as any);
 
       if (error) throw error;
       

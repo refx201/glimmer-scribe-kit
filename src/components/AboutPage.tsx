@@ -40,7 +40,7 @@ export function AboutPage() {
       const { data, error } = await supabase
         .from('suppliers')
         .select('*')
-        .eq('is_active', true)
+        .eq('is_active', true as any)
         .order('display_order', { ascending: true });
 
       if (error) throw error;
@@ -461,7 +461,7 @@ export function AboutPage() {
             </section>
           ) : (
             <>
-              {suppliers.map((supplier, index) => {
+              {suppliers.map((supplier: any, index) => {
                 const brands = Array.isArray(supplier.brands) ? supplier.brands as string[] : [];
                 const bgColors = [
                   'from-purple-50 to-indigo-50',

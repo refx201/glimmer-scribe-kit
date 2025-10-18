@@ -41,7 +41,7 @@ export function SuccessPartnerProgram() {
       const { data, error } = await supabase
         .from('partner_success_stories')
         .select('*')
-        .eq('is_active', true)
+        .eq('is_active', true as any)
         .order('display_order', { ascending: true })
         .order('created_at', { ascending: false });
 
@@ -61,7 +61,7 @@ export function SuccessPartnerProgram() {
       const { data, error } = await supabase
         .from('commission_levels')
         .select('*')
-        .eq('is_active', true)
+        .eq('is_active', true as any)
         .order('display_order', { ascending: true });
 
       if (error) {
@@ -245,7 +245,7 @@ export function SuccessPartnerProgram() {
               📈 مستويات البرنامج والعمولات
             </h3>
             <div className="grid gap-4 md:gap-6">
-              {commissionStructure.map((item, index) => (
+              {commissionStructure.map((item: any, index) => (
                 <Card key={item.id || index} className="hover:shadow-lg transition-all duration-300 border-procell-primary/10">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4 space-x-reverse">
@@ -500,7 +500,7 @@ export function SuccessPartnerProgram() {
             <p className="text-muted-foreground mt-4">جاري تحميل قصص النجاح...</p>
           </div>
         ) : successStories.length > 0 ? (
-          <PartnerStoriesCarousel stories={successStories} />
+          <PartnerStoriesCarousel stories={successStories as any} />
         ) : (
           <div className="mt-16 text-center py-8">
             <p className="text-muted-foreground">لا توجد قصص نجاح متاحة حالياً</p>

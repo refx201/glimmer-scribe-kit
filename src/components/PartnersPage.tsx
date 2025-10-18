@@ -55,7 +55,7 @@ export function PartnersPage() {
       const { data, error } = await supabase
         .from('commission_levels')
         .select('*')
-        .eq('is_active', true)
+        .eq('is_active', true as any)
         .order('display_order', { ascending: true });
 
       if (error) throw error;
@@ -70,7 +70,7 @@ export function PartnersPage() {
       const { data, error } = await supabase
         .from('partner_success_stories')
         .select('*')
-        .eq('is_active', true)
+        .eq('is_active', true as any)
         .order('display_order', { ascending: true });
 
       if (error) throw error;
@@ -129,7 +129,7 @@ export function PartnersPage() {
           phone_number: formData.phone,
           experience: `${formData.businessType} - ${formData.experience}`,
           help_description: `Expected Sales: ${formData.expectedSales}\n\n${formData.message}`
-        }])
+        } as any])
         .select()
         .single();
 
@@ -276,7 +276,7 @@ export function PartnersPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-              {commissionLevels.map((level, index) => (
+              {commissionLevels.map((level: any, index) => (
                 <Card key={level.id} className={`text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border-0 overflow-hidden ${index === commissionLevels.length - 1 ? 'ring-2 ring-yellow-400 transform scale-105' : ''}`}>
                   <CardHeader className={`${level.color} text-white relative`}>
                     {index === commissionLevels.length - 1 && (
@@ -321,7 +321,7 @@ export function PartnersPage() {
               جاري التحميل...
             </div>
           ) : (
-            <PartnerStoriesCarousel stories={partnerStories} />
+            <PartnerStoriesCarousel stories={partnerStories as any} />
           )}
         </section>
 

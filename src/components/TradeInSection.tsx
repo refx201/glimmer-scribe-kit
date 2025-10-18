@@ -89,7 +89,7 @@ export function TradeInSection() {
           customer_name: requestData.customer_name,
           customer_phone: requestData.customer_phone,
           status: 'pending'
-        }])
+        } as any])
         .select()
         .single();
       
