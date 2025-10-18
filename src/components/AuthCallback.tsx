@@ -15,105 +15,94 @@ export function AuthCallback() {
         console.log('=== [AUTH CALLBACK] Starting OAuth callback handler ===');
         console.log('[AUTH CALLBACK] Timestamp:', new Date().toISOString());
         console.log('[AUTH CALLBACK] Full URL:', window.location.href);
-        console.log('[AUTH CALLBACK] Pathname:', window.location.pathname);
-        console.log('[AUTH CALLBACK] Search params:', window.location.search);
-        console.log('[AUTH CALLBACK] Hash:', window.location.hash);
+        
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get('code');
+        const error_param = url.searchParams.get('error');
+        const error_description = url.searchParams.get('error_description');
+        
+        console.log('[AUTH CALLBACK] URL params:', {
+          hasCode: !!code,
+          hasError: !!error_param,
+          errorDescription: error_description
+        });
+        
+        // Handle OAuth errors
+        if (error_param) {
+          console.error('[AUTH CALLBACK] OAuth error:', error_param);
+          if (!cancelled) {
+            setStatus('error');
+            toast.error(`خطأ في المصادقة: ${error_description || error_param}`);
+            setTimeout(() => window.location.href = '/', 2000);
+          }
+          return;
+        }
         
         // Check for existing session first
+        console.log('[AUTH CALLBACK] Checking for existing session...');
         const { data: { session: existingSession } } = await supabase.auth.getSession();
         
         if (existingSession) {
-          console.log('[AUTH CALLBACK] Session already exists, redirecting');
+          console.log('[AUTH CALLBACK] ✅ Session already exists, redirecting to profile');
           if (!cancelled) {
             setStatus('done');
             toast.success('تم تسجيل الدخول بنجاح');
-            setTimeout(() => (window.location.href = '/profile'), 600);
+            setTimeout(() => window.location.href = '/profile', 600);
           }
           return;
         }
         
-        // Check if we have the necessary URL parameters
-        const url = new URL(window.location.href);
-        const code = url.searchParams.get('code');
-        const oauthError = url.searchParams.get('error');
-        const errorDescription = url.searchParams.get('error_description');
-        const hasHashParams = url.hash.includes('access_token');
-        
-        // Check for OAuth errors
-        if (oauthError) {
-          console.error('[AUTH CALLBACK] OAuth error:', oauthError);
+        // If no code parameter, this is not a valid OAuth callback
+        if (!code) {
+          console.log('[AUTH CALLBACK] No code parameter, redirecting to home');
           if (!cancelled) {
-            setStatus('error');
-            toast.error(`خطأ في المصادقة: ${errorDescription || oauthError}`);
-            setTimeout(() => (window.location.href = '/'), 2000);
-          }
-          return;
-        }
-        
-        // If no OAuth parameters, redirect to home (invalid callback)
-        if (!code && !hasHashParams) {
-          console.log('[AUTH CALLBACK] No OAuth params found, redirecting to home');
-          if (!cancelled) {
-            setTimeout(() => (window.location.href = '/'), 500);
+            setTimeout(() => window.location.href = '/', 500);
           }
           return;
         }
 
-        console.log('[AUTH CALLBACK] Attempting to exchange code for session...');
+        // Attempt to exchange the code for a session
+        console.log('[AUTH CALLBACK] Exchanging code for session...');
+        const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         
-        try {
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(window.location.href);
+        if (exchangeError) {
+          console.error('[AUTH CALLBACK] ❌ Exchange error:', exchangeError);
           
-          if (exchangeError) {
-            console.error('[AUTH CALLBACK] Exchange error:', exchangeError);
-            console.error('[AUTH CALLBACK] Error details:', {
-              message: exchangeError.message,
-              status: exchangeError.status,
-              name: exchangeError.name
-            });
-            
-            // Check if we already have a session
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            if (session) {
-              console.log('[AUTH CALLBACK] Session found despite exchange error');
-              if (!cancelled) {
-                setStatus('done');
-                toast.success('تم تسجيل الدخول بنجاح');
-                setTimeout(() => (window.location.href = '/profile'), 600);
-              }
-              return;
-            }
-            
+          // One more session check in case it succeeded despite error
+          const { data: { session: finalSession } } = await supabase.auth.getSession();
+          
+          if (finalSession) {
+            console.log('[AUTH CALLBACK] ✅ Session found despite error');
             if (!cancelled) {
-              setStatus('error');
-              toast.error('رابط غير صالح. حاول تسجيل الدخول مرة أخرى.');
-              setTimeout(() => (window.location.href = '/'), 2000);
+              setStatus('done');
+              toast.success('تم تسجيل الدخول بنجاح');
+              setTimeout(() => window.location.href = '/profile', 600);
             }
             return;
           }
-
-          console.log('[AUTH CALLBACK] Exchange successful!');
-        } catch (e) {
-          console.error('[AUTH CALLBACK] Exception during exchange:', e);
-          throw e;
+          
+          // Real error - show message and redirect
+          if (!cancelled) {
+            setStatus('error');
+            toast.error('حدث خطأ في تسجيل الدخول. حاول مرة أخرى.');
+            setTimeout(() => window.location.href = '/', 2000);
+          }
+          return;
         }
+
+        console.log('[AUTH CALLBACK] ✅ Exchange successful!');
         
         if (!cancelled) {
           setStatus('done');
           toast.success('تم تسجيل الدخول بنجاح');
-          setTimeout(() => (window.location.href = '/profile'), 600);
+          setTimeout(() => window.location.href = '/profile', 600);
         }
-      } catch (e) {
-        console.error('[AUTH CALLBACK] ❌ Unexpected error in AuthCallback:', {
-          message: e.message,
-          stack: e.stack,
-          name: e.name
-        });
+      } catch (e: any) {
+        console.error('[AUTH CALLBACK] ❌ Unexpected error:', e);
         if (!cancelled) {
           setStatus('error');
           toast.error('حدث خطأ غير متوقع');
-          setTimeout(() => (window.location.href = '/'), 1500);
+          setTimeout(() => window.location.href = '/', 1500);
         }
       }
     };
