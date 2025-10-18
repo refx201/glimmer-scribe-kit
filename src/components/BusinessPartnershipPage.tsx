@@ -6,6 +6,8 @@ import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Store, 
   Users, 
@@ -80,12 +82,44 @@ export function BusinessPartnershipPage() {
     }
   ];
 
-  const partnerStats = [
-    { number: '500+', label: 'شريك معتمد', icon: <Store className="h-5 w-5" /> },
-    { number: '300-500', label: 'وحدة شهرياً', icon: <TrendingUp className="h-5 w-5" /> },
-    { number: '15-25%', label: 'هامش ربح متوسط', icon: <DollarSign className="h-5 w-5" /> },
-    { number: '24/7', label: 'دعم فني', icon: <HeadphonesIcon className="h-5 w-5" /> }
-  ];
+  // Fetch partner stats from database
+  const { data: partnerStats = [], isLoading: statsLoading } = useQuery({
+    queryKey: ['partner-stat-boxes'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('stat_boxes')
+        .select('*')
+        .eq('is_active', true as any)
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching partner stats:', error);
+        throw error;
+      }
+      
+      // Map the data to include icon components
+      return (data || []).map((box: any) => ({
+        number: box.number,
+        label: box.label,
+        icon: getIconComponent(box.icon)
+      }));
+    },
+  });
+
+  // Helper function to get icon component dynamically
+  const getIconComponent = (iconName: string) => {
+    const iconProps = { className: 'h-5 w-5' };
+    const icons: Record<string, JSX.Element> = {
+      'Store': <Store {...iconProps} />,
+      'TrendingUp': <TrendingUp {...iconProps} />,
+      'DollarSign': <DollarSign {...iconProps} />,
+      'HeadphonesIcon': <HeadphonesIcon {...iconProps} />,
+      'Users': <Users {...iconProps} />,
+      'Target': <Target {...iconProps} />,
+      'Award': <Award {...iconProps} />
+    };
+    return icons[iconName] || <Store {...iconProps} />;
+  };
 
   const successStories = [
     {
@@ -197,19 +231,31 @@ export function BusinessPartnershipPage() {
       {/* Stats Section */}
       <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {partnerStats.map((stat, index) => (
-              <Card key={index} className="text-center border-procell-primary/20 hover:shadow-lg transition-shadow">
-                <CardContent className="p-6 space-y-3">
-                  <div className="text-procell-primary mx-auto w-fit">
-                    {stat.icon}
-                  </div>
-                  <div className="text-2xl md:text-3xl font-bold text-procell-primary">{stat.number}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {statsLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="text-center border-procell-primary/20">
+                  <CardContent className="p-6">
+                    <div className="h-20 bg-gray-200 animate-pulse rounded"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {partnerStats.map((stat, index) => (
+                <Card key={index} className="text-center border-procell-primary/20 hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6 space-y-3">
+                    <div className="text-procell-primary mx-auto w-fit">
+                      {stat.icon}
+                    </div>
+                    <div className="text-2xl md:text-3xl font-bold text-procell-primary">{stat.number}</div>
+                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

@@ -168,13 +168,18 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
       }
 
       // Brand filter
-      if (selectedBrands.length > 0 && !selectedBrands.includes(product.brand)) {
-        return false;
+      if (selectedBrands.length > 0) {
+        const productBrandName = typeof product.brand === 'string' ? product.brand : product.brand?.name;
+        if (!selectedBrands.includes(productBrandName)) {
+          return false;
+        }
       }
 
-      // Filter category filter
-      if (selectedCategories.length > 0 && !selectedCategories.includes(product.filter_category_id)) {
-        return false;
+      // Filter category filter - check if product's filter_category_id matches selected categories
+      if (selectedCategories.length > 0) {
+        if (!product.filter_category_id || !selectedCategories.includes(product.filter_category_id)) {
+          return false;
+        }
       }
 
       // Category filter
