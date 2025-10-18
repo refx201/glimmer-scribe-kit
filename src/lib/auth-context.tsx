@@ -56,9 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error) {
+      if (error || !profile) {
         console.error('Error fetching profile:', error);
         // Fallback to user metadata if database fetch fails
         setUserProfile({
@@ -79,6 +79,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error syncing profile:', error);
+      // Fallback to user metadata on any error
+      setUserProfile({
+        id: userId,
+        email: session.user.email,
+        name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
+        userType: session.user.user_metadata?.userType || 'customer'
+      });
     }
   };
 
@@ -92,12 +99,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session)
         setUser(session?.user ?? null)
         
-        // Sync profile from database
+        // Sync profile from database - do NOT use setTimeout
         if (session?.user) {
-          // Use setTimeout to defer database calls
-          setTimeout(() => {
-            syncProfileWithDatabase(session.user.id, session);
-          }, 0);
+          await syncProfileWithDatabase(session.user.id, session);
           
           // Handle successful sign in
           if (event === 'SIGNED_IN') {
