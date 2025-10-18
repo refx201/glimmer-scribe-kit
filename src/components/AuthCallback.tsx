@@ -19,6 +19,19 @@ export function AuthCallback() {
         console.log('[AUTH CALLBACK] Search params:', window.location.search);
         console.log('[AUTH CALLBACK] Hash:', window.location.hash);
         
+        // Check for existing session first
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        
+        if (existingSession) {
+          console.log('[AUTH CALLBACK] Session already exists, redirecting');
+          if (!cancelled) {
+            setStatus('done');
+            toast.success('تم تسجيل الدخول بنجاح');
+            setTimeout(() => (window.location.href = '/profile'), 600);
+          }
+          return;
+        }
+        
         // Check if we have the necessary URL parameters
         const url = new URL(window.location.href);
         const code = url.searchParams.get('code');
@@ -37,22 +50,13 @@ export function AuthCallback() {
           return;
         }
         
-        // Check for existing session first (user might already be logged in)
-        const { data: { session: existingSession } } = await supabase.auth.getSession();
-        
-        if (existingSession) {
-          console.log('[AUTH CALLBACK] Session already exists, redirecting');
+        // If no OAuth parameters, redirect to home (invalid callback)
+        if (!code && !hasHashParams) {
+          console.log('[AUTH CALLBACK] No OAuth params found, redirecting to home');
           if (!cancelled) {
-            setStatus('done');
-            toast.success('تم تسجيل الدخول بنجاح');
-            setTimeout(() => (window.location.href = '/profile'), 600);
+            setTimeout(() => (window.location.href = '/'), 500);
           }
           return;
-        }
-        
-        // If no code/hash and no existing session, try to exchange anyway
-        if (!code && !hasHashParams) {
-          console.log('[AUTH CALLBACK] No OAuth params, attempting exchange anyway');
         }
 
         console.log('[AUTH CALLBACK] Attempting to exchange code for session...');
