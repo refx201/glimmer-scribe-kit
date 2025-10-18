@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { AdditionalServicesDialog, RepairServicesDialog } from './ServiceRequestDialogs';
+import { StatBoxesSection } from './home/StatBoxesSection';
 import { 
   Wrench, 
   Shield, 
@@ -281,24 +282,12 @@ export function MaintenancePage() {
               خبراء معتمدون في إصلاح وصيانة الهواتف الذكية بأحدث التقنيات وقطع الغيار الأصلية
             </p>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-4 md:gap-6 max-w-2xl mx-auto">
-              <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/20">
-                <div className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">98%</div>
-                <div className="text-sm md:text-base text-white font-medium">نسبة النجاح</div>
-              </div>
-              <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/20">
-                <div className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">30 دقيقة</div>
-                <div className="text-sm md:text-base text-white font-medium">متوسط الإصلاح</div>
-              </div>
-              <div className="text-center bg-white/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/20">
-                <div className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">5000+</div>
-                <div className="text-sm md:text-base text-white font-medium">عميل راضي</div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
+
+      {/* Stats Section */}
+      <StatBoxesSection page="maintenance" />
 
       <div className="container mx-auto px-4 py-8 md:py-12">
         {/* Services Tabs */}

@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner'
 import { apiCall } from '../lib/supabase';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { StatBoxesSection } from './home/StatBoxesSection';
 
 export function TradeInPage() {
   const [loading, setLoading] = useState(false);
@@ -184,27 +185,12 @@ export function TradeInPage() {
             <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">
               احصل على أفضل قيمة لهاتفك القديم واستبدله بأحدث الأجهزة بسعر مناسب
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8 max-w-4xl mx-auto">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4">
-                <div className="text-2xl md:text-3xl font-bold text-white mb-1">500+</div>
-                <div className="text-sm text-white/80">جهاز مستبدل</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4">
-                <div className="text-2xl md:text-3xl font-bold text-white mb-1">15%</div>
-                <div className="text-sm text-white/80">خصم إضافي</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4">
-                <div className="text-2xl md:text-3xl font-bold text-white mb-1">3,500₪</div>
-                <div className="text-sm text-white/80">متوسط الأسعار</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4">
-                <div className="text-2xl md:text-3xl font-bold text-white mb-1">24/7</div>
-                <div className="text-sm text-white/80">دعم مستمر</div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
+
+      {/* Stats Section */}
+      <StatBoxesSection page="trade_in" />
 
       {/* Main Content */}
       <section className="py-16 md:py-20">

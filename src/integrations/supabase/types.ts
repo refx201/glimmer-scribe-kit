@@ -1403,6 +1403,7 @@ export type Database = {
           is_active: boolean | null
           label: string
           number: string
+          page: string
           updated_at: string | null
         }
         Insert: {
@@ -1414,6 +1415,7 @@ export type Database = {
           is_active?: boolean | null
           label: string
           number: string
+          page?: string
           updated_at?: string | null
         }
         Update: {
@@ -1425,6 +1427,7 @@ export type Database = {
           is_active?: boolean | null
           label?: string
           number?: string
+          page?: string
           updated_at?: string | null
         }
         Relationships: []

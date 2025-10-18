@@ -3,14 +3,19 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import * as Icons from 'lucide-react';
 
-export function StatBoxesSection() {
+interface StatBoxesSectionProps {
+  page?: 'home' | 'trade_in' | 'purchase' | 'maintenance';
+}
+
+export function StatBoxesSection({ page = 'home' }: StatBoxesSectionProps) {
   const { data: stats = [], isLoading } = useQuery({
-    queryKey: ['home-stat-boxes'],
+    queryKey: ['stat-boxes', page],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('stat_boxes')
         .select('*')
         .eq('is_active', true)
+        .eq('page', page)
         .order('display_order', { ascending: true });
 
       if (error) {

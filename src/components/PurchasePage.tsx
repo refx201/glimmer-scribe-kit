@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Alert, AlertDescription } from './ui/alert';
 import { Progress } from './ui/progress';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { StatBoxesSection } from './home/StatBoxesSection';
 import { 
   Smartphone, 
   DollarSign, 
@@ -313,24 +314,10 @@ function PurchaseFeatures() {
             </Card>
           ))}
         </div>
-
-        {/* Statistics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {PURCHASE_STATS.map((stat, index) => (
-            <Card key={index} className="bg-white border-0 text-center p-6 shadow-sm">
-              <div className={`mx-auto w-12 h-12 ${stat.color} rounded-full flex items-center justify-center mb-3`}>
-                <stat.icon className="h-6 w-6" />
-              </div>
-              <div className={`text-2xl font-bold ${stat.color} mb-1`}>
-                {stat.number}
-              </div>
-              <p className="text-gray-600 text-sm font-medium">
-                {stat.label}
-              </p>
-            </Card>
-          ))}
-        </div>
       </div>
+
+      {/* Statistics from Database */}
+      <StatBoxesSection page="purchase" />
     </section>
   );
 }

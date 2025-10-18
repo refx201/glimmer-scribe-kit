@@ -47,6 +47,7 @@ export function StatBoxDialog({ box, open, onOpenChange }: StatBoxDialogProps) {
     color: 'text-green-600',
     display_order: 0,
     is_active: true,
+    page: 'home' as 'home' | 'trade_in' | 'purchase' | 'maintenance',
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -55,7 +56,15 @@ export function StatBoxDialog({ box, open, onOpenChange }: StatBoxDialogProps) {
     if (box) {
       setFormData(box);
     } else {
-      setFormData({ number: '', label: '', icon: 'Users', color: 'text-green-600', display_order: 0, is_active: true });
+      setFormData({ 
+        number: '', 
+        label: '', 
+        icon: 'Users', 
+        color: 'text-green-600', 
+        display_order: 0, 
+        is_active: true,
+        page: box?.page || 'home'
+      });
     }
   }, [box]);
 
@@ -137,6 +146,20 @@ export function StatBoxDialog({ box, open, onOpenChange }: StatBoxDialogProps) {
                 {colorOptions.map((color) => (
                   <SelectItem key={color.value} value={color.value}>{color.label}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>الصفحة</Label>
+            <Select value={formData.page} onValueChange={(value) => setFormData({ ...formData, page: value as any })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="home">الصفحة الرئيسية</SelectItem>
+                <SelectItem value="trade_in">صفحة الاستبدال</SelectItem>
+                <SelectItem value="purchase">صفحة الشراء</SelectItem>
+                <SelectItem value="maintenance">صفحة الصيانة</SelectItem>
               </SelectContent>
             </Select>
           </div>
