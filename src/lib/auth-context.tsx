@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { User, Session, RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 interface AuthContextType {
   user: User | null
@@ -13,6 +14,10 @@ interface AuthContextType {
   signInWithApple: () => Promise<void>
   signOut: () => Promise<void>
   userProfile: any
+  userRoles: string[]
+  hasRole: (role: string) => boolean
+  isAdmin: boolean
+  updatePresence: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -22,6 +27,104 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [userProfile, setUserProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [userRoles, setUserRoles] = useState<string[]>([])
+  const [presenceChannel, setPresenceChannel] = useState<RealtimeChannel | null>(null)
+
+  // Fetch user roles from database
+  const fetchUserRoles = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('[AUTH] Error fetching roles:', error);
+        return [];
+      }
+
+      const roles = data?.map(r => r.role) || [];
+      console.log('[AUTH] User roles:', roles);
+      return roles;
+    } catch (error) {
+      console.error('[AUTH] Critical error fetching roles:', error);
+      return [];
+    }
+  }, []);
+
+  // Update user presence in realtime
+  const updatePresence = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      await supabase
+        .from('user_presence')
+        .upsert({
+          user_id: user.id,
+          heartbeat_at: new Date().toISOString(),
+          metadata: {
+            page: window.location.pathname,
+            userAgent: navigator.userAgent
+          }
+        }, {
+          onConflict: 'user_id'
+        });
+    } catch (error) {
+      console.error('[AUTH] Error updating presence:', error);
+    }
+  }, [user]);
+
+  // Setup Supabase Realtime presence tracking
+  const setupPresenceTracking = useCallback(async (userId: string) => {
+    console.log('[AUTH] Setting up presence tracking for:', userId);
+
+    // Clean up existing channel
+    if (presenceChannel) {
+      await supabase.removeChannel(presenceChannel);
+    }
+
+    // Create new presence channel
+    const channel = supabase.channel(`presence:${userId}`, {
+      config: {
+        presence: {
+          key: userId
+        }
+      }
+    });
+
+    // Track online status
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        console.log('[AUTH] Presence synced');
+      })
+      .on('presence', { event: 'join' }, ({ newPresences }) => {
+        console.log('[AUTH] User joined:', newPresences);
+      })
+      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        console.log('[AUTH] User left:', leftPresences);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            user_id: userId,
+            online_at: new Date().toISOString()
+          });
+
+          // Update presence in database
+          await updatePresence();
+
+          // Set up heartbeat interval
+          const heartbeatInterval = setInterval(updatePresence, 30000); // Every 30 seconds
+
+          // Store interval ID for cleanup
+          (channel as any).heartbeatInterval = heartbeatInterval;
+        }
+      });
+
+    setPresenceChannel(channel);
+
+    return channel;
+  }, [presenceChannel, updatePresence]);
 
   // Function to sync profile with database
   const syncProfileWithDatabase = async (userId: string, session: Session) => {
@@ -30,6 +133,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('[AUTH] User metadata:', session.user.user_metadata);
     
     try {
+      // Fetch user roles
+      const roles = await fetchUserRoles(userId);
       // First, check if profile exists
       console.log('[AUTH] Checking for existing profile...');
       const { data: existingProfile, error: fetchError } = await supabase
@@ -86,20 +191,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: profile.email,
           name: profile.display_name || profile.full_name || 'مستخدم',
           phone: profile.phone || profile.phone_number,
-          userType: 'customer' // Always default to customer for OAuth users
+          roles: roles
         };
         console.log('[AUTH] Setting user profile:', userProfileData);
         setUserProfile(userProfileData);
+        setUserRoles(roles);
+
+        // Setup presence tracking
+        await setupPresenceTracking(userId);
       } else {
         console.log('[AUTH] No profile found, using metadata fallback');
         const fallbackProfile = {
           id: userId,
           email: session.user.email,
           name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
-          userType: 'customer'
+          roles: roles
         };
         console.log('[AUTH] Fallback profile:', fallbackProfile);
         setUserProfile(fallbackProfile);
+        setUserRoles(roles);
+
+        // Setup presence tracking
+        await setupPresenceTracking(userId);
       }
     } catch (error) {
       console.error('[AUTH] Critical error syncing profile:', error);
@@ -108,10 +221,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: userId,
         email: session.user.email,
         name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'مستخدم',
-        userType: 'customer'
+        roles: []
       };
       console.log('[AUTH] Error fallback profile:', errorFallback);
       setUserProfile(errorFallback);
+      setUserRoles([]);
     }
   };
 
@@ -151,6 +265,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           setUserProfile(null);
+          setUserRoles([]);
+
+          // Clean up presence tracking
+          if (presenceChannel) {
+            // Clear heartbeat interval
+            if ((presenceChannel as any).heartbeatInterval) {
+              clearInterval((presenceChannel as any).heartbeatInterval);
+            }
+            await supabase.removeChannel(presenceChannel);
+            setPresenceChannel(null);
+          }
         }
         
         setLoading(false);
@@ -258,8 +383,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+
+      // Cleanup presence tracking
+      if (presenceChannel) {
+        if ((presenceChannel as any).heartbeatInterval) {
+          clearInterval((presenceChannel as any).heartbeatInterval);
+        }
+        supabase.removeChannel(presenceChannel);
+      }
     };
-  }, [])
+  }, [fetchUserRoles, setupPresenceTracking])
 
 
   const signUp = async (email: string, password: string, name: string, userType = 'customer', phone?: string) => {
@@ -303,11 +436,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (error) throw error
       
-      // Show welcome toast
-      const userName = data.user?.user_metadata?.name || 'المستخدم'
-      toast.success(`أهلاً بك، ${userName}!`, {
-        description: 'تم تسجيل الدخول بنجاح'
-      })
+      // Redirect to profile after successful sign in
+      setTimeout(() => {
+        window.location.href = '/profile';
+      }, 500);
     } catch (error) {
       console.error('Sign in error:', error)
       throw error
@@ -362,13 +494,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Clean up presence before signing out
+      if (user) {
+        await supabase
+          .from('user_presence')
+          .delete()
+          .eq('user_id', user.id);
+      }
+
       const { error } = await supabase.auth.signOut()
       if (error) throw error
+
+      // Redirect to home after sign out
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
     } catch (error) {
       console.error('Sign out error:', error)
       throw error
     }
   }
+
+  // Helper functions for role checking
+  const hasRole = useCallback((role: string) => {
+    return userRoles.includes(role);
+  }, [userRoles]);
+
+  const isAdmin = useCallback(() => {
+    return userRoles.includes('admin');
+  }, [userRoles]);
 
   const value = {
     user,
@@ -379,7 +533,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithGoogle,
     signInWithApple,
     signOut,
-    userProfile
+    userProfile,
+    userRoles,
+    hasRole,
+    isAdmin: isAdmin(),
+    updatePresence
   }
 
   return (
