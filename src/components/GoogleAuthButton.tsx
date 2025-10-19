@@ -18,12 +18,9 @@ export function GoogleAuthButton() {
       console.log('🚪 Port:', window.location.port);
       
       // Determine full redirect URL based on environment
-      const isLocalhost = window.location.hostname === 'localhost';
-      const redirectUrl = isLocalhost 
-        ? 'http://localhost:3000/auth/callback'
-        : 'https://procell.app/auth/callback';
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       
-      console.log('📍 Environment:', isLocalhost ? 'localhost' : 'production');
+      console.log('📍 Origin:', window.location.origin);
       console.log('🔗 Redirect URL:', redirectUrl);
       
       // Check Supabase client configuration

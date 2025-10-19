@@ -461,10 +461,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      const isLocalhost = window.location.hostname === 'localhost';
-      const redirectUrl = isLocalhost 
-        ? 'http://localhost:3000/auth/callback'
-        : 'https://procell.app/auth/callback';
+      const redirectUrl = `${window.location.origin}/auth/callback`;
         
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
