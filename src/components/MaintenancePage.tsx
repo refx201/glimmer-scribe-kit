@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { AdditionalServicesDialog, RepairServicesDialog } from './ServiceRequestDialogs';
 import { StatBoxesSection } from './home/StatBoxesSection';
+import { MaintenanceTestimonials } from './MaintenanceTestimonials';
 import { 
   Wrench, 
   Shield, 
@@ -202,34 +203,6 @@ export function MaintenancePage() {
     { name: 'Huawei', logo: '📳', models: ['P Series', 'Mate Series', 'Nova'] },
     { name: 'OnePlus', logo: '⚡', models: ['OnePlus 12', 'OnePlus 11', 'OnePlus Nord'] },
     { name: 'Google', logo: '🔍', models: ['Pixel 8', 'Pixel 7', 'Pixel 6'] }
-  ];
-
-  // Testimonials
-  const testimonials = [
-    {
-      name: 'أحمد محمد',
-      location: 'رام الله',
-      service: 'إصلاح شاشة iPhone 14',
-      rating: 5,
-      review: 'خدمة ممتازة وسريعة، تم إصلاح الشاشة في 30 دقيقة بجودة عالية جداً. أنصح بشدة!',
-      date: 'منذ أسبوع'
-    },
-    {
-      name: 'فاطمة أحمد',
-      location: 'نابلس',
-      service: 'استبدال بطارية Samsung',
-      rating: 5,
-      review: 'البطارية الجديدة تعمل بشكل رائع، والفريق محترف جداً. خدمة عملاء ممتازة.',
-      date: 'منذ 3 أيام'
-    },
-    {
-      name: 'محمد عبدالله',
-      location: 'الخليل',
-      service: 'حلول برمجيات',
-      rating: 5,
-      review: 'حلوا مشكلة النظام بسرعة وكفاءة، والجهاز الآن يعمل أفضل من قبل. شكراً لكم!',
-      date: 'منذ يومين'
-    }
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -580,53 +553,6 @@ export function MaintenancePage() {
           </TabsContent>
         </Tabs>
 
-        {/* Customer Testimonials */}
-        <section className="mb-16">
-          <div className="text-center mb-8">
-            <h2 className="text-xl md:text-2xl font-bold text-procell-dark mb-2 flex items-center justify-center">
-              <Star className="h-6 w-6 text-yellow-500 ml-2" />
-              💬 آراء عملائنا
-            </h2>
-            <p className="text-sm md:text-base text-muted-foreground">
-              شهادات حقيقية من عملاء راضين عن خدماتنا
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="border-0 bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-semibold text-procell-dark">{testimonial.name}</h4>
-                      <p className="text-sm text-muted-foreground flex items-center">
-                        <MapPin className="h-3 w-3 ml-1" />
-                        {testimonial.location}
-                      </p>
-                    </div>
-                    <div className="flex items-center">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground mb-4 italic">
-                    "{testimonial.review}"
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="bg-procell-accent/10 text-procell-accent px-2 py-1 rounded">
-                      {testimonial.service}
-                    </span>
-                    <span>{testimonial.date}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
         {/* Maintenance Centers Section */}
         <section className="mb-12">
           <div className="text-center mb-8">
@@ -677,6 +603,9 @@ export function MaintenancePage() {
             })}
           </div>
         </section>
+
+        {/* Maintenance Testimonials Section */}
+        <MaintenanceTestimonials />
 
         {/* Contact Info */}
         <div className="bg-gradient-to-r from-procell-primary/5 to-procell-secondary/5 rounded-2xl p-8 md:p-10 text-center">

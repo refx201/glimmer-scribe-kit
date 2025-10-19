@@ -530,6 +530,45 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_testimonials: {
+        Row: {
+          avatar_url: string | null
+          comment: string
+          created_at: string
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          location: string
+          name: string
+          rating: number
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          comment: string
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          location: string
+          name: string
+          rating?: number
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          comment?: string
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          location?: string
+          name?: string
+          rating?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       movie_website_access: {
         Row: {
           created_at: string

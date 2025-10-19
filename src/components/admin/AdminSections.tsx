@@ -30,6 +30,7 @@ import { PartnerStoriesList } from './partners/PartnerStoriesList';
 import { CommissionLevelsList } from './partners/CommissionLevelsList';
 import { SuppliersList } from './suppliers/SuppliersList';
 import { TestimonialsList } from './testimonials/TestimonialsList';
+import { MaintenanceTestimonialsList } from './testimonials/MaintenanceTestimonialsList';
 import { ReviewsList } from './reviews/ReviewsList';
 
 interface ContactMessage {
@@ -202,7 +203,15 @@ export function AdminSections() {
           >
             <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             <MessageSquare className="h-4 w-4" />
-            آراء العملاء
+            آراء العملاء (رئيسية)
+          </TabsTrigger>
+          <TabsTrigger 
+            value="maintenance-testimonials" 
+            className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-cyan-500/20 data-[state=active]:border-blue-500/40"
+          >
+            <Star className="h-4 w-4 text-blue-500 fill-blue-500" />
+            <Wrench className="h-4 w-4" />
+            آراء الصيانة
           </TabsTrigger>
           <TabsTrigger 
             value="reviews" 
@@ -333,6 +342,10 @@ export function AdminSections() {
 
         <TabsContent value="testimonials" className="mt-6">
           <TestimonialsList />
+        </TabsContent>
+
+        <TabsContent value="maintenance-testimonials" className="mt-6">
+          <MaintenanceTestimonialsList />
         </TabsContent>
 
         <TabsContent value="reviews" className="mt-6">

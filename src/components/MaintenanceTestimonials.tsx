@@ -11,7 +11,7 @@ import {
   Loader2
 } from 'lucide-react';
 
-interface Testimonial {
+interface MaintenanceTestimonial {
   id: string;
   name: string;
   location: string;
@@ -20,9 +20,9 @@ interface Testimonial {
   avatar_url?: string;
 }
 
-export function CustomerTestimonials() {
+export function MaintenanceTestimonials() {
   const [currentPage, setCurrentPage] = useState(0);
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [testimonials, setTestimonials] = useState<MaintenanceTestimonial[]>([]);
   const [loading, setLoading] = useState(true);
 
   const testimonialsPerPage = 3;
@@ -37,11 +37,11 @@ export function CustomerTestimonials() {
     
     // Subscribe to real-time updates
     const channel = supabase
-      .channel('testimonials-changes')
+      .channel('maintenance-testimonials-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'testimonials'
+        table: 'maintenance_testimonials'
       }, () => {
         fetchTestimonials();
       })
@@ -56,7 +56,7 @@ export function CustomerTestimonials() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('testimonials')
+        .from('maintenance_testimonials')
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true })
@@ -66,7 +66,7 @@ export function CustomerTestimonials() {
 
       setTestimonials(data || []);
     } catch (error) {
-      console.error('Error fetching testimonials:', error);
+      console.error('Error fetching maintenance testimonials:', error);
       toast.error('خطأ في تحميل التقييمات');
     } finally {
       setLoading(false);
@@ -92,11 +92,11 @@ export function CustomerTestimonials() {
 
   if (loading) {
     return (
-      <section className="py-8 sm:py-12 md:py-16 bg-gradient-to-br from-yellow-50/50 to-white">
+      <section className="py-12 md:py-16 bg-gradient-to-br from-background via-muted/30 to-background">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex justify-center items-center min-h-[400px]">
             <div className="flex flex-col items-center space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin text-procell-primary" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
               <p className="text-muted-foreground">جاري تحميل التقييمات...</p>
             </div>
           </div>
@@ -117,7 +117,7 @@ export function CustomerTestimonials() {
             آراء عملائنا 👍
           </h2>
           <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-            شهادات حقيقية من عملاء راضين عن خدماتنا وجودة منتجاتنا
+            تقييمات حقيقية من عملاء استخدموا خدمات الصيانة لدينا
           </p>
         </div>
 
@@ -184,8 +184,8 @@ export function CustomerTestimonials() {
                     onClick={() => setCurrentPage(index)}
                     className={`h-2 rounded-full transition-all ${
                       index === currentPage
-                        ? 'w-8 bg-procell-primary'
-                        : 'w-2 bg-procell-primary/30 hover:bg-procell-primary/50'
+                        ? 'w-8 bg-primary'
+                        : 'w-2 bg-primary/30 hover:bg-primary/50'
                     }`}
                     aria-label={`الصفحة ${index + 1}`}
                   />
