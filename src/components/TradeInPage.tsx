@@ -22,7 +22,6 @@ import { toast } from 'sonner'
 import { apiCall } from '../lib/supabase';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { StatBoxesSection } from './home/StatBoxesSection';
-import { CustomerTestimonials } from './CustomerTestimonials';
 
 export function TradeInPage() {
   const [loading, setLoading] = useState(false);
@@ -405,8 +404,6 @@ export function TradeInPage() {
             </div>
           </div>
 
-          {/* Customer Reviews - Managed from Admin */}
-          <CustomerTestimonials />
         </div>
       </section>
     </div>
