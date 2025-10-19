@@ -1606,6 +1606,51 @@ export type Database = {
         }
         Relationships: []
       }
+      trade_in_testimonials: {
+        Row: {
+          avatar_url: string | null
+          comment: string
+          created_at: string | null
+          device_received: string | null
+          device_traded: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          location: string
+          name: string
+          rating: number
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          comment: string
+          created_at?: string | null
+          device_received?: string | null
+          device_traded?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          location: string
+          name: string
+          rating?: number
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          comment?: string
+          created_at?: string | null
+          device_received?: string | null
+          device_traded?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          location?: string
+          name?: string
+          rating?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       user_points: {
         Row: {
           created_at: string | null

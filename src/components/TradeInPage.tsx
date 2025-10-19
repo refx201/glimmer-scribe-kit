@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 import { apiCall } from '../lib/supabase';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { StatBoxesSection } from './home/StatBoxesSection';
+import { TradeInTestimonials } from './TradeInTestimonials';
 
 export function TradeInPage() {
   const [loading, setLoading] = useState(false);
@@ -404,6 +405,8 @@ export function TradeInPage() {
             </div>
           </div>
 
+          {/* Trade-In Testimonials */}
+          <TradeInTestimonials />
         </div>
       </section>
     </div>

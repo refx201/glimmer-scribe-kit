@@ -31,6 +31,7 @@ import { CommissionLevelsList } from './partners/CommissionLevelsList';
 import { SuppliersList } from './suppliers/SuppliersList';
 import { TestimonialsList } from './testimonials/TestimonialsList';
 import { MaintenanceTestimonialsList } from './testimonials/MaintenanceTestimonialsList';
+import { TradeInTestimonialsList } from './testimonials/TradeInTestimonialsList';
 import { ReviewsList } from './reviews/ReviewsList';
 
 interface ContactMessage {
@@ -221,6 +222,14 @@ export function AdminSections() {
             <MessageSquare className="h-4 w-4" />
             التقييمات
           </TabsTrigger>
+          <TabsTrigger 
+            value="trade-in-testimonials" 
+            className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:border-violet-500/40"
+          >
+            <Star className="h-4 w-4 text-violet-500 fill-violet-500" />
+            <RefreshCw className="h-4 w-4" />
+            تقييمات الاستبدال
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="points" className="mt-6">
@@ -350,6 +359,10 @@ export function AdminSections() {
 
         <TabsContent value="reviews" className="mt-6">
           <ReviewsList />
+        </TabsContent>
+
+        <TabsContent value="trade-in-testimonials" className="mt-6">
+          <TradeInTestimonialsList />
         </TabsContent>
       </Tabs>
     </div>
