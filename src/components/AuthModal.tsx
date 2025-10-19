@@ -42,7 +42,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     try {
       await signIn(signInData.email, signInData.password);
-      toast.success('تم تسجيل الدخول بنجاح');
+      // Auth context will handle toast and redirect (if needed)
       onClose();
       setSignInData({ email: '', password: '' });
     } catch (error: any) {

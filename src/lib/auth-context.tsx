@@ -301,10 +301,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               duration: 3000
             });
             
-            console.log('🚀 [AUTH CONTEXT] Redirecting to home...');
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 1000);
+            // Only redirect if not already on home page (prevents refresh loop)
+            if (currentPath !== '/') {
+              console.log('🚀 [AUTH CONTEXT] Redirecting to home...');
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 1000);
+            } else {
+              console.log('ℹ️ [AUTH CONTEXT] Already on home page, no redirect needed');
+            }
           }
         } else {
           console.log('[AUTH] ⚠️ No session - user signed out or session expired');

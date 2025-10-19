@@ -44,7 +44,7 @@ export function EnhancedAuthModal({ isOpen, onClose }: EnhancedAuthModalProps) {
 
     try {
       await signIn(signInData.email, signInData.password);
-      // Auth context will handle toast and redirect to /profile
+      // Auth context will handle toast and redirect (if needed)
       onClose();
       setSignInData({ email: '', password: '' });
     } catch (error: any) {
