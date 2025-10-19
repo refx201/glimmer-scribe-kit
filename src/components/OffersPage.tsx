@@ -389,7 +389,13 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
   const renderProductCard = (product: any, isFlash = false, isBundle = false) => (
     <Card 
       className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-200 bg-white overflow-hidden cursor-pointer h-full flex flex-col rounded-2xl"
-      onClick={() => onNavigate?.('product', product.id)}
+      onClick={() => {
+        if (product.isBundle || isBundle) {
+          window.location.href = `/package/${product.id}`;
+        } else {
+          onNavigate?.('product', product.id);
+        }
+      }}
     >
       {/* Product Image */}
       <div className="relative bg-gray-50 p-4 md:p-10 flex items-center justify-center" style={{ minHeight: '320px' }}>
@@ -468,22 +474,26 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
         <Button 
           onClick={(e) => {
             e.stopPropagation();
-            addItem({
-              productId: product.id,
-              name: product.name,
-              price: product.price,
-              originalPrice: product.originalPrice || product.price,
-              discount: product.discount || 0,
-              image: product.image,
-              brandId: product.brandId,
-              maxStock: product.stock || 10,
-              quantity: 1
-            });
+            if (product.isBundle || isBundle) {
+              window.location.href = `/package/${product.id}`;
+            } else {
+              addItem({
+                productId: product.id,
+                name: product.name,
+                price: product.price,
+                originalPrice: product.originalPrice || product.price,
+                discount: product.discount || 0,
+                image: product.image,
+                brandId: product.brandId,
+                maxStock: product.stock || 10,
+                quantity: 1
+              });
+            }
           }}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 mt-auto rounded-lg"
         >
           <ShoppingCart className="h-4 w-4 ml-2" />
-          أضف الآن
+          {product.isBundle || isBundle ? 'عرض الباقة' : 'أضف الآن'}
         </Button>
       </CardContent>
     </Card>
