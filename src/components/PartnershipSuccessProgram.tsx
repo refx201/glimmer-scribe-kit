@@ -19,7 +19,7 @@ const iconMap = {
 };
 
 const PartnershipSuccessProgram = memo(({ onNavigate }: PartnershipSuccessProgramProps) => {
-  // Fetch stat boxes from Supabase
+  // Fetch stat boxes from Supabase (home-only)
   const { data: stats = [], isLoading } = useQuery({
     queryKey: ['partner-stat-boxes-home'],
     queryFn: async () => {
@@ -27,6 +27,7 @@ const PartnershipSuccessProgram = memo(({ onNavigate }: PartnershipSuccessProgra
         .from('stat_boxes')
         .select('*')
         .eq('is_active', true as any)
+        .eq('page', 'home')
         .order('display_order', { ascending: true });
       if (error) throw error;
       return data || [];
