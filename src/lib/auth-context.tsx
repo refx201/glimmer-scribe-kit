@@ -301,9 +301,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               duration: 3000
             });
             
-            console.log('🚀 [AUTH CONTEXT] Redirecting to profile...');
+            console.log('🚀 [AUTH CONTEXT] Redirecting to home...');
             setTimeout(() => {
-              window.location.href = '/profile';
+              window.location.href = '/';
             }, 1000);
           }
         } else {

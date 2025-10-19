@@ -76,7 +76,7 @@ export function AuthCallback() {
             duration: 3000
           });
           console.groupEnd();
-          setTimeout(() => navigate('/profile'), REDIRECT_DELAY_SUCCESS);
+          setTimeout(() => navigate('/'), REDIRECT_DELAY_SUCCESS);
           return;
         }
         
@@ -137,7 +137,7 @@ export function AuthCallback() {
             console.log('🚀 [AUTH CALLBACK] Redirecting to home in', REDIRECT_DELAY_SUCCESS, 'ms');
             console.groupEnd();
             setTimeout(() => {
-              navigate('/profile');
+              navigate('/');
             }, REDIRECT_DELAY_SUCCESS);
           } else if (event === 'INITIAL_SESSION' && !session) {
             console.log('⏳ [AUTH CALLBACK] No initial session, waiting 2s for code exchange...');
