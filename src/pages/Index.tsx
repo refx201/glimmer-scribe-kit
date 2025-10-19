@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { DatabaseHeroCarousel } from "@/components/DatabaseHeroCarousel";
 import { SEOHead } from "@/components/SEOHead";
 import { StatBoxesSection } from "@/components/home/StatBoxesSection";
+import { CustomerTestimonials } from "@/components/CustomerTestimonials";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ const Index = () => {
       <main>
         <DatabaseHeroCarousel onNavigate={(path) => navigate(`/${path}`)} />
         <StatBoxesSection />
+        <CustomerTestimonials />
       </main>
     </>
   );
