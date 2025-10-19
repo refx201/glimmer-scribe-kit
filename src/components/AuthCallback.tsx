@@ -12,50 +12,53 @@ export function AuthCallback() {
 
   useEffect(() => {
     let cancelled = false;
+    let authSubscription: any = null;
 
     const handleCallback = async () => {
       try {
         console.log('🔐 [AUTH CALLBACK] Processing OAuth callback...');
         
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('❌ [AUTH CALLBACK] Session error:', error);
-          if (!cancelled) {
-            setStatus('error');
-            toast.error('فشل تسجيل الدخول');
-            setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
-          }
-          return;
-        }
-
-        if (!session) {
-          console.error('❌ [AUTH CALLBACK] No session found');
-          if (!cancelled) {
-            setStatus('error');
-            toast.error('لم يتم العثور على جلسة');
-            setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
-          }
-          return;
-        }
-
-        console.log('✅ [AUTH CALLBACK] Session established');
-        console.log('👤 [AUTH CALLBACK] User:', session.user.email);
-        
-        if (!cancelled) {
-          const userName = session.user.user_metadata?.name || 
-                          session.user.user_metadata?.full_name || 
-                          session.user.email?.split('@')[0] || 
-                          'المستخدم';
+        // Listen for auth state changes - this will automatically handle the OAuth code exchange
+        authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log('🔐 [AUTH CALLBACK] Auth event:', event);
+          console.log('🔐 [AUTH CALLBACK] Session:', session ? 'exists' : 'none');
           
-          setStatus('done');
-          toast.success(`أهلاً بك، ${userName}!`, {
-            description: 'تم تسجيل الدخول بنجاح',
-            duration: 3000
-          });
+          if (cancelled) return;
           
-          setTimeout(() => navigate('/'), REDIRECT_DELAY_SUCCESS);
-        }
+          if (event === 'SIGNED_IN' && session) {
+            console.log('✅ [AUTH CALLBACK] Session established');
+            console.log('👤 [AUTH CALLBACK] User:', session.user.email);
+            
+            const userName = session.user.user_metadata?.name || 
+                            session.user.user_metadata?.full_name || 
+                            session.user.email?.split('@')[0] || 
+                            'المستخدم';
+            
+            setStatus('done');
+            toast.success(`أهلاً بك، ${userName}!`, {
+              description: 'تم تسجيل الدخول بنجاح',
+              duration: 3000
+            });
+            
+            setTimeout(() => {
+              navigate('/');
+            }, REDIRECT_DELAY_SUCCESS);
+          } else if (event === 'INITIAL_SESSION' && !session) {
+            // Give it a moment for the session to be established
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Try to get session again
+            const { data: { session: retrySession }, error } = await supabase.auth.getSession();
+            
+            if (error || !retrySession) {
+              console.error('❌ [AUTH CALLBACK] No session after retry');
+              setStatus('error');
+              toast.error('لم يتم العثور على جلسة');
+              setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
+            }
+          }
+        });
+        
       } catch (error: any) {
         console.error('❌ [AUTH CALLBACK] Fatal error:', error);
         if (!cancelled) {
@@ -70,6 +73,9 @@ export function AuthCallback() {
     
     return () => {
       cancelled = true;
+      if (authSubscription) {
+        authSubscription.data?.subscription?.unsubscribe();
+      }
     };
   }, [navigate]);
 
