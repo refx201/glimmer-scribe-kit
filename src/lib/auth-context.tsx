@@ -271,17 +271,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // OAuth sign-in is handled by AuthCallback component
           if (event === 'SIGNED_IN') {
             const provider = session.user.app_metadata?.provider;
+            const currentPath = window.location.pathname;
             
-            console.log('🎉 [AUTH] Sign in detected');
-            console.log('🔑 [AUTH] Provider:', provider);
+            console.log('🎉 [AUTH CONTEXT] Sign in detected');
+            console.log('🔑 [AUTH CONTEXT] Provider:', provider);
+            console.log('📍 [AUTH CONTEXT] Current path:', currentPath);
             
             // OAuth logins are handled by AuthCallback - don't interfere!
             if (provider === 'google' || provider === 'apple') {
-              console.log('ℹ️ [AUTH] OAuth login - letting AuthCallback handle redirect');
+              // If we're already on callback page, let it handle everything
+              if (currentPath === '/auth/callback') {
+                console.log('ℹ️ [AUTH CONTEXT] On callback page - letting AuthCallback handle everything');
+                return;
+              }
+              
+              console.log('ℹ️ [AUTH CONTEXT] OAuth login completed, AuthCallback should have handled it');
               return;
             }
             
             // Only handle email/password logins here
+            console.log('📧 [AUTH CONTEXT] Email/password login detected');
             const userName = session.user.user_metadata?.name || 
                             session.user.user_metadata?.full_name || 
                             session.user.email?.split('@')[0] || 
@@ -292,7 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               duration: 3000
             });
             
-            console.log('🚀 [AUTH] Redirecting to profile...');
+            console.log('🚀 [AUTH CONTEXT] Redirecting to profile...');
             setTimeout(() => {
               window.location.href = '/profile';
             }, 1000);

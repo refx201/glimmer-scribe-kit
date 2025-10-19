@@ -10,15 +10,34 @@ export function GoogleAuthButton() {
     try {
       setIsLoading(true);
       
+      console.group('🔐 [GOOGLE AUTH] Initiating OAuth Flow');
+      console.log('⏰ Timestamp:', new Date().toISOString());
+      console.log('🌐 Current URL:', window.location.href);
+      console.log('🏠 Hostname:', window.location.hostname);
+      console.log('🔌 Protocol:', window.location.protocol);
+      console.log('🚪 Port:', window.location.port);
+      
       // Determine full redirect URL based on environment
       const isLocalhost = window.location.hostname === 'localhost';
       const redirectUrl = isLocalhost 
         ? 'http://localhost:3000/auth/callback'
         : 'https://procell.app/auth/callback';
       
-      console.log('🚀 [GOOGLE AUTH] Starting OAuth flow...');
-      console.log('🌐 [GOOGLE AUTH] Redirect URL:', redirectUrl);
-      console.log('🏠 [GOOGLE AUTH] Environment:', isLocalhost ? 'localhost' : 'production');
+      console.log('📍 Environment:', isLocalhost ? 'localhost' : 'production');
+      console.log('🔗 Redirect URL:', redirectUrl);
+      
+      // Check Supabase client configuration
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      console.log('🔍 Existing session before OAuth:', existingSession ? 'EXISTS' : 'NONE');
+      
+      console.log('🚀 Starting OAuth with provider: google');
+      console.log('⚙️ OAuth options:', {
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
+      });
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -32,14 +51,29 @@ export function GoogleAuthButton() {
       });
 
       if (error) {
-        console.error('❌ [GOOGLE BUTTON] OAuth error:', error);
+        console.group('❌ [GOOGLE AUTH] OAuth Error');
+        console.error('💥 Error object:', error);
+        console.error('📝 Message:', error.message);
+        console.error('🏷️ Name:', error.name);
+        console.error('📊 Status:', (error as any).status);
+        console.groupEnd();
         throw error;
       }
 
-      console.log('✅ [GOOGLE BUTTON] OAuth initiated, redirecting to Google...');
+      console.log('✅ [GOOGLE AUTH] OAuth initiated successfully');
+      console.log('📦 OAuth data:', data);
+      console.log('🔗 OAuth URL:', data?.url);
+      console.log('🎯 Provider:', data?.provider);
+      console.groupEnd();
+      
       // Supabase will handle the redirect
     } catch (error: any) {
-      console.error('❌ [GOOGLE BUTTON] Fatal error:', error);
+      console.group('❌ [GOOGLE AUTH] Fatal Error');
+      console.error('💥 Error:', error);
+      console.error('📝 Message:', error?.message);
+      console.error('📚 Stack:', error?.stack);
+      console.groupEnd();
+      
       toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
       setIsLoading(false);
     }

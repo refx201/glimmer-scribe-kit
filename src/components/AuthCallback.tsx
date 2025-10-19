@@ -16,17 +16,111 @@ export function AuthCallback() {
 
     const handleCallback = async () => {
       try {
-        console.log('🔐 [AUTH CALLBACK] Processing OAuth callback...');
+        console.group('🔐 [AUTH CALLBACK] OAuth Callback Processing');
+        console.log('⏰ Timestamp:', new Date().toISOString());
+        console.log('🌐 Current URL:', window.location.href);
+        console.log('📍 Pathname:', window.location.pathname);
+        console.log('🔍 Search params:', window.location.search);
+        console.log('🔗 Hash:', window.location.hash);
+        
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        const errorDescription = urlParams.get('error_description');
+        
+        console.log('📦 URL Parameters:', {
+          hasCode: !!code,
+          codeLength: code?.length || 0,
+          error,
+          errorDescription
+        });
+        
+        if (error) {
+          console.error('❌ [AUTH CALLBACK] OAuth Error from Provider:', {
+            error,
+            description: errorDescription
+          });
+          setStatus('error');
+          toast.error(`فشل تسجيل الدخول: ${errorDescription || error}`);
+          setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
+          console.groupEnd();
+          return;
+        }
+        
+        if (!code) {
+          console.warn('⚠️ [AUTH CALLBACK] No authorization code in URL');
+        }
+        
+        // Check current session before setting up listener
+        console.log('🔎 Checking for existing session...');
+        const { data: { session: existingSession }, error: sessionError } = await supabase.auth.getSession();
+        console.log('📊 Existing session check:', {
+          hasSession: !!existingSession,
+          error: sessionError?.message,
+          userId: existingSession?.user?.id,
+          email: existingSession?.user?.email,
+          provider: existingSession?.user?.app_metadata?.provider
+        });
+        
+        if (existingSession) {
+          console.log('✅ [AUTH CALLBACK] Session already exists, redirecting...');
+          const userName = existingSession.user.user_metadata?.name || 
+                          existingSession.user.user_metadata?.full_name || 
+                          existingSession.user.email?.split('@')[0] || 
+                          'المستخدم';
+          
+          setStatus('done');
+          toast.success(`أهلاً بك، ${userName}!`, {
+            description: 'تم تسجيل الدخول بنجاح',
+            duration: 3000
+          });
+          console.groupEnd();
+          setTimeout(() => navigate('/'), REDIRECT_DELAY_SUCCESS);
+          return;
+        }
+        
+        console.log('👂 [AUTH CALLBACK] Setting up auth state listener...');
+        let listenerTriggered = false;
         
         // Listen for auth state changes - this will automatically handle the OAuth code exchange
         authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('🔐 [AUTH CALLBACK] Auth event:', event);
-          console.log('🔐 [AUTH CALLBACK] Session:', session ? 'exists' : 'none');
+          console.group('🔔 [AUTH CALLBACK] Auth State Change');
+          console.log('⏰ Event timestamp:', new Date().toISOString());
+          console.log('📢 Event type:', event);
+          console.log('🔐 Session status:', session ? 'EXISTS' : 'NULL');
           
-          if (cancelled) return;
+          if (session) {
+            console.log('👤 User details:', {
+              id: session.user.id,
+              email: session.user.email,
+              provider: session.user.app_metadata?.provider,
+              created_at: session.user.created_at,
+              metadata: session.user.user_metadata
+            });
+            console.log('🎫 Session details:', {
+              access_token_length: session.access_token?.length || 0,
+              refresh_token_length: session.refresh_token?.length || 0,
+              expires_at: session.expires_at,
+              expires_in: session.expires_in
+            });
+          }
+          
+          console.groupEnd();
+          
+          if (cancelled) {
+            console.log('⏹️ [AUTH CALLBACK] Component unmounted, ignoring event');
+            return;
+          }
+          
+          if (listenerTriggered) {
+            console.log('⏭️ [AUTH CALLBACK] Listener already processed, skipping');
+            return;
+          }
           
           if (event === 'SIGNED_IN' && session) {
-            console.log('✅ [AUTH CALLBACK] Session established');
+            listenerTriggered = true;
+            console.log('✅ [AUTH CALLBACK] Sign-in successful!');
             console.log('👤 [AUTH CALLBACK] User:', session.user.email);
             
             const userName = session.user.user_metadata?.name || 
@@ -40,27 +134,51 @@ export function AuthCallback() {
               duration: 3000
             });
             
+            console.log('🚀 [AUTH CALLBACK] Redirecting to home in', REDIRECT_DELAY_SUCCESS, 'ms');
+            console.groupEnd();
             setTimeout(() => {
               navigate('/');
             }, REDIRECT_DELAY_SUCCESS);
           } else if (event === 'INITIAL_SESSION' && !session) {
+            console.log('⏳ [AUTH CALLBACK] No initial session, waiting 2s for code exchange...');
+            
             // Give it a moment for the session to be established
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
             
             // Try to get session again
-            const { data: { session: retrySession }, error } = await supabase.auth.getSession();
+            console.log('🔄 [AUTH CALLBACK] Retrying session check...');
+            const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession();
             
-            if (error || !retrySession) {
+            console.log('🔍 [AUTH CALLBACK] Retry result:', {
+              hasSession: !!retrySession,
+              error: retryError?.message,
+              userId: retrySession?.user?.id
+            });
+            
+            if (retryError || !retrySession) {
+              listenerTriggered = true;
               console.error('❌ [AUTH CALLBACK] No session after retry');
+              console.error('💥 [AUTH CALLBACK] Error details:', retryError);
               setStatus('error');
-              toast.error('لم يتم العثور على جلسة');
+              toast.error('لم يتم العثور على جلسة. يرجى المحاولة مرة أخرى.');
+              console.groupEnd();
               setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
+            } else {
+              console.log('✅ [AUTH CALLBACK] Session found on retry!');
             }
           }
         });
         
+        console.log('✅ [AUTH CALLBACK] Auth listener setup complete');
+        console.groupEnd();
+        
       } catch (error: any) {
-        console.error('❌ [AUTH CALLBACK] Fatal error:', error);
+        console.group('❌ [AUTH CALLBACK] Fatal Error');
+        console.error('💥 Error object:', error);
+        console.error('📝 Error message:', error?.message);
+        console.error('📚 Error stack:', error?.stack);
+        console.groupEnd();
+        
         if (!cancelled) {
           setStatus('error');
           toast.error('حدث خطأ غير متوقع');
@@ -72,6 +190,7 @@ export function AuthCallback() {
     handleCallback();
     
     return () => {
+      console.log('🧹 [AUTH CALLBACK] Cleaning up...');
       cancelled = true;
       if (authSubscription) {
         authSubscription.data?.subscription?.unsubscribe();
