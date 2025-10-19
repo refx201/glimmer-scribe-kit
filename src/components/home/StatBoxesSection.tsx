@@ -11,6 +11,7 @@ export function StatBoxesSection({ page = 'home' }: StatBoxesSectionProps) {
   const { data: stats = [], isLoading } = useQuery({
     queryKey: ['stat-boxes', page],
     queryFn: async () => {
+      console.log(`[StatBoxes] Fetching for page: "${page}"`);
       const { data, error } = await supabase
         .from('stat_boxes')
         .select('*')
@@ -19,10 +20,11 @@ export function StatBoxesSection({ page = 'home' }: StatBoxesSectionProps) {
         .order('display_order', { ascending: true });
 
       if (error) {
-        console.error('Error fetching stat boxes:', error);
+        console.error('[StatBoxes] Error fetching stat boxes:', error);
         throw error;
       }
       
+      console.log(`[StatBoxes] Fetched ${data?.length || 0} boxes for page "${page}":`, data);
       return data || [];
     },
   });
