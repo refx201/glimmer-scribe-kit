@@ -17,8 +17,8 @@ import { Toaster } from './components/ui/sonner';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './components/ui/carousel';
 
 // Utilities & Context
-import { AuthProvider } from './lib/auth-context';
-import { CartProvider } from './lib/cart-context';
+// Removed AuthProvider wrapper (now in main.tsx)
+// Removed CartProvider wrapper (now in main.tsx)
 import { apiCall } from './lib/supabase';
 import { CartSidebar } from './components/CartSidebar';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -447,14 +447,10 @@ function ProCellApp() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <CartProvider>
-          <Router>
-            <ProCellApp />
-            <CartSidebar />
-          </Router>
-        </CartProvider>
-      </AuthProvider>
+      <Router>
+        <ProCellApp />
+        <CartSidebar />
+      </Router>
     </ErrorBoundary>
   );
 }

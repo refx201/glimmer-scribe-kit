@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Star, Send, Loader2, LogIn } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '../lib/auth-context';
 import { toast } from 'sonner';
 
 interface ReviewFormProps {

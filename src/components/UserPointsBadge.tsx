@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Coins } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "../lib/auth-context";
 import {
   Popover,
   PopoverContent,
