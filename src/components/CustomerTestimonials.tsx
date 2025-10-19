@@ -25,12 +25,9 @@ export function CustomerTestimonials() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const testimonialsPerPage = 3;
-  const totalPages = Math.ceil(testimonials.length / testimonialsPerPage);
-  const displayedTestimonials = testimonials.slice(
-    currentPage * testimonialsPerPage,
-    (currentPage + 1) * testimonialsPerPage
-  );
+  const testimonialsPerPage = 1; // Show one testimonial at a time
+  const totalPages = testimonials.length;
+  const currentTestimonial = testimonials[currentPage] || testimonials[0];
 
   useEffect(() => {
     fetchTestimonials();
@@ -109,101 +106,116 @@ export function CustomerTestimonials() {
     return null;
   }
 
+  if (!currentTestimonial) return null;
+
   return (
     <section className="py-12 md:py-16 bg-gradient-to-br from-background via-muted/30 to-background">
       <div className="container mx-auto px-4 sm:px-6">
+        {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-            آراء عملائنا 👍
-          </h2>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Star className="h-8 w-8 text-yellow-400 fill-yellow-400" />
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+              آراء عملائنا الكرام
+            </h2>
+          </div>
           <p className="text-base text-muted-foreground max-w-2xl mx-auto">
             شهادات حقيقية من عملاء راضين عن خدماتنا وجودة منتجاتنا
           </p>
         </div>
 
-        {/* Testimonials Grid with Navigation */}
-        <div className="space-y-6">
-          <div className="grid md:grid-cols-3 gap-6">
-            {displayedTestimonials.map((testimonial) => (
-              <Card key={testimonial.id} className="hover:shadow-xl transition-all duration-300 border-border/50 bg-card">
-                <CardContent className="p-4">
-                  {/* Avatar and Name First */}
-                  <div className="flex items-center gap-3 mb-3">
-                    {testimonial.avatar_url ? (
-                      <img
-                        src={testimonial.avatar_url}
-                        alt={testimonial.name}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
-                        <Users className="h-6 w-6 text-primary" />
-                      </div>
-                    )}
-                    <div className="text-right flex-1">
-                      <div className="text-base font-bold text-foreground">
-                        {testimonial.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {testimonial.location}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Stars */}
-                  <div className="flex justify-start gap-1 mb-3">
-                    {renderStars(testimonial.rating)}
-                  </div>
-
-                  {/* Comment */}
-                  <blockquote className="text-sm text-muted-foreground leading-relaxed text-right line-clamp-3">
-                    {testimonial.comment}
-                  </blockquote>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Navigation Buttons - Only show if more than 3 testimonials */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={prevPage}
-                className="gap-2"
-              >
-                <ChevronRight className="h-4 w-4" />
-                السابق
-              </Button>
-              
-              <div className="flex gap-2">
-                {Array.from({ length: totalPages }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentPage(index)}
-                    className={`h-2 rounded-full transition-all ${
-                      index === currentPage
-                        ? 'w-8 bg-procell-primary'
-                        : 'w-2 bg-procell-primary/30 hover:bg-procell-primary/50'
-                    }`}
-                    aria-label={`الصفحة ${index + 1}`}
-                  />
-                ))}
+        {/* Single Testimonial Card */}
+        <div className="max-w-3xl mx-auto mb-8">
+          <Card className="border-border/50 bg-card shadow-lg">
+            <CardContent className="p-8 md:p-12">
+              {/* Quote Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-yellow-400/20 flex items-center justify-center">
+                  <span className="text-5xl text-yellow-400 font-serif leading-none">"</span>
+                </div>
               </div>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={nextPage}
-                className="gap-2"
-              >
-                التالي
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+              {/* Comment */}
+              <blockquote className="text-lg md:text-xl text-foreground leading-relaxed text-center mb-8 font-medium">
+                "{currentTestimonial.comment}"
+              </blockquote>
+
+              {/* User Info Section */}
+              <div className="flex flex-col md:flex-row items-center justify-center gap-6 pt-6 border-t border-border/50">
+                {/* Avatar */}
+                <div className="flex-shrink-0">
+                  {currentTestimonial.avatar_url ? (
+                    <img
+                      src={currentTestimonial.avatar_url}
+                      alt={currentTestimonial.name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                      <Users className="h-8 w-8 text-primary" />
+                    </div>
+                  )}
+                </div>
+
+                {/* User Details */}
+                <div className="text-center md:text-right flex-1">
+                  <div className="text-lg font-bold text-foreground mb-1">
+                    {currentTestimonial.name}
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-2">
+                    {currentTestimonial.location}
+                  </div>
+                  <div className="flex justify-center md:justify-start gap-1">
+                    {renderStars(currentTestimonial.rating)}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Navigation Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4">
+            {/* Previous Button */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={prevPage}
+              className="rounded-full w-12 h-12 border-2"
+              aria-label="السابق"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+
+            {/* Dots Indicator */}
+            <div className="flex gap-2">
+              {Array.from({ length: totalPages }).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPage(index)}
+                  className={`h-3 rounded-full transition-all ${
+                    index === currentPage
+                      ? 'w-8 bg-primary'
+                      : 'w-3 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                  }`}
+                  aria-label={`الصفحة ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            {/* Next Button */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={nextPage}
+              className="rounded-full w-12 h-12 border-2"
+              aria-label="التالي"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );
