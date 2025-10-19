@@ -245,21 +245,6 @@ export function ContactPage() {
           </div>
         </section>
 
-        {/* Services Section */}
-        <section className="mb-16">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-procell-dark mb-4 flex items-center justify-center">
-              <Wrench className="h-6 w-6 text-procell-secondary ml-2" />
-              🔧 خدماتنا المتميزة
-            </h2>
-            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-              نقدم مجموعة شاملة من الخدمات التقنية عالية الجودة
-            </p>
-          </div>
-          
-          <ServicesSection />
-        </section>
-
         {/* Main Contact Form & Info */}
         <div className="grid lg:grid-cols-2 gap-8 md:gap-12 mb-16">
           {/* Contact Form */}
@@ -475,30 +460,6 @@ export function ContactPage() {
           </div>
         </div>
 
-        {/* Bottom CTA */}
-        <section>
-          <Card className="max-w-3xl mx-auto bg-gradient-to-r from-procell-primary/10 to-procell-secondary/10 border-procell-primary/20">
-            <CardContent className="p-6 md:p-8 text-center">
-              <h3 className="text-xl md:text-2xl font-bold text-procell-dark mb-4">
-                💡 هل تحتاج مساعدة فورية؟
-              </h3>
-              <p className="text-sm md:text-base text-muted-foreground mb-6">
-                فريقنا متاح الآن للرد على استفساراتك وتقديم أفضل الحلول
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button className="bg-procell-primary hover:bg-procell-primary/90 transform hover:scale-105 transition-all">
-                  <Phone className="h-4 w-4 ml-2" />
-                  اتصل الآن
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                </Button>
-                <Button variant="outline" className="border-procell-secondary text-procell-secondary hover:bg-procell-secondary hover:text-white transform hover:scale-105 transition-all">
-                  <MessageCircle className="h-4 w-4 ml-2" />
-                  دردشة مباشرة
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
       </div>
     </main>
   );
