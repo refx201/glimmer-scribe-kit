@@ -29,6 +29,8 @@ import { MaintenanceServicesList } from './maintenance/MaintenanceServicesList';
 import { PartnerStoriesList } from './partners/PartnerStoriesList';
 import { CommissionLevelsList } from './partners/CommissionLevelsList';
 import { SuppliersList } from './suppliers/SuppliersList';
+import { TestimonialsList } from './testimonials/TestimonialsList';
+import { ReviewsList } from './reviews/ReviewsList';
 
 interface ContactMessage {
   id: string;
@@ -194,6 +196,22 @@ export function AdminSections() {
             <Building className="h-4 w-4" />
             الموردين والوكلاء
           </TabsTrigger>
+          <TabsTrigger 
+            value="testimonials" 
+            className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500/20 data-[state=active]:to-orange-500/20 data-[state=active]:border-yellow-500/40"
+          >
+            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+            <MessageSquare className="h-4 w-4" />
+            آراء العملاء
+          </TabsTrigger>
+          <TabsTrigger 
+            value="reviews" 
+            className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500/20 data-[state=active]:to-rose-500/20 data-[state=active]:border-pink-500/40"
+          >
+            <Star className="h-4 w-4 text-pink-500 fill-pink-500" />
+            <MessageSquare className="h-4 w-4" />
+            التقييمات
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="points" className="mt-6">
@@ -311,6 +329,14 @@ export function AdminSections() {
 
         <TabsContent value="suppliers" className="mt-6">
           <SuppliersList />
+        </TabsContent>
+
+        <TabsContent value="testimonials" className="mt-6">
+          <TestimonialsList />
+        </TabsContent>
+
+        <TabsContent value="reviews" className="mt-6">
+          <ReviewsList />
         </TabsContent>
       </Tabs>
     </div>
