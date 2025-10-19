@@ -80,7 +80,7 @@ export function PartnersPage() {
     },
   });
 
-  // Fetch stat boxes for hero quick benefits
+  // Fetch stat boxes for hero quick benefits (from home page only)
   const { data: partnerStats = [], isLoading: statsLoading } = useQuery({
     queryKey: ['partner-stat-boxes-hero'],
     queryFn: async () => {
@@ -88,6 +88,7 @@ export function PartnersPage() {
         .from('stat_boxes')
         .select('*')
         .eq('is_active', true as any)
+        .eq('page', 'home')
         .order('display_order', { ascending: true });
       if (error) throw error;
       return data || [];
