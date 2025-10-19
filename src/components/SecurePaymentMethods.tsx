@@ -28,12 +28,12 @@ const SecurePaymentMethods = memo(() => {
           
           <div className="flex flex-wrap items-center justify-center gap-6 mb-8">
             {paymentMethods.map((method) => (
-              <div key={method.id} className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-blue-100 hover:shadow-md transition-shadow">
+              <div key={method.id} className="bg-white/80 backdrop-blur-sm rounded-xl p-6 shadow-sm border border-blue-100 hover:shadow-md transition-shadow w-32 h-20 flex items-center justify-center">
                 {method.image_url ? (
                   <ImageWithFallback
                     src={method.image_url}
                     alt={method.name}
-                    className="h-12 w-auto object-contain"
+                    className="max-h-12 max-w-full object-contain"
                   />
                 ) : (
                   <div className="font-bold text-base text-blue-600">{method.name}</div>
