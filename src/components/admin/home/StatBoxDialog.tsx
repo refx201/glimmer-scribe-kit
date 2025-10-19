@@ -32,6 +32,7 @@ const iconOptions = [
 ];
 
 const colorOptions = [
+  { value: 'text-white', label: 'أبيض' },
   { value: 'text-green-600', label: 'أخضر' },
   { value: 'text-orange-500', label: 'برتقالي' },
   { value: 'text-blue-600', label: 'أزرق' },

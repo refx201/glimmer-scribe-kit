@@ -126,37 +126,37 @@ export function CustomerTestimonials() {
           <div className="grid md:grid-cols-3 gap-6">
             {displayedTestimonials.map((testimonial) => (
               <Card key={testimonial.id} className="hover:shadow-xl transition-all duration-300 border-border/50 bg-card">
-                <CardContent className="p-6">
+                <CardContent className="p-4">
                   {/* Avatar and Name First */}
-                  <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-center gap-3 mb-3">
                     {testimonial.avatar_url ? (
                       <img
                         src={testimonial.avatar_url}
                         alt={testimonial.name}
-                        className="w-14 h-14 rounded-full object-cover border-2 border-primary/20"
+                        className="w-12 h-12 rounded-full object-cover border-2 border-primary/20"
                       />
                     ) : (
-                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
-                        <Users className="h-7 w-7 text-primary" />
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
+                        <Users className="h-6 w-6 text-primary" />
                       </div>
                     )}
                     <div className="text-right flex-1">
-                      <div className="text-lg font-bold text-foreground mb-1">
+                      <div className="text-base font-bold text-foreground">
                         {testimonial.name}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         {testimonial.location}
                       </div>
                     </div>
                   </div>
 
                   {/* Stars */}
-                  <div className="flex justify-start gap-1 mb-4">
+                  <div className="flex justify-start gap-1 mb-3">
                     {renderStars(testimonial.rating)}
                   </div>
 
                   {/* Comment */}
-                  <blockquote className="text-sm text-muted-foreground leading-relaxed text-right min-h-[80px]">
+                  <blockquote className="text-sm text-muted-foreground leading-relaxed text-right line-clamp-3">
                     {testimonial.comment}
                   </blockquote>
                 </CardContent>
