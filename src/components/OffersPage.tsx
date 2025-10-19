@@ -40,7 +40,8 @@ import {
   Minus,
   AlertCircle
 } from 'lucide-react';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { ImageLoader } from './ImageLoader';
+import { getOptimizedImageUrl, getProductImageFallback } from '../lib/image-utils';
 import { useCart } from '../lib/cart-context';
 import { useOffersData } from '../hooks/use-offers-data';
 import { CompactFilterBar } from './CompactFilterBar';
@@ -388,14 +389,15 @@ export function OffersPage({ onNavigate }: OffersPageProps = {}) {
   const renderProductCard = (product: any, isFlash = false, isBundle = false) => (
     <Card 
       className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-200 bg-white overflow-hidden cursor-pointer h-full flex flex-col rounded-2xl"
-      onClick={() => onNavigate?.('product', product.id.toString())}
+      onClick={() => onNavigate?.('product', product.id)}
     >
       {/* Product Image */}
       <div className="relative bg-gray-50 p-4 md:p-10 flex items-center justify-center" style={{ minHeight: '320px' }}>
-        <ImageWithFallback
-          src={product.image}
+        <ImageLoader
+          src={getOptimizedImageUrl(product.image || '', 300, 400)}
           alt={product.name}
           className="w-auto h-auto object-contain max-h-72 md:max-h-96 max-w-full md:max-w-[85%]"
+          fallbackSrc={getProductImageFallback('هواتف ذكية')}
         />
         
         {/* Discount Badge */}
