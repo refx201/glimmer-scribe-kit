@@ -171,7 +171,7 @@ export function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white" dir="rtl">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-procell-primary via-procell-primary to-procell-secondary text-white py-20 overflow-hidden">
         {/* Background Pattern */}
