@@ -12,189 +12,154 @@ export function AuthCallback() {
 
   useEffect(() => {
     let cancelled = false;
-    let authSubscription: any = null;
+    let timeoutId: NodeJS.Timeout;
 
     const handleCallback = async () => {
       try {
-        console.group('🔐 [AUTH CALLBACK] OAuth Callback Processing');
-        console.log('⏰ Timestamp:', new Date().toISOString());
-        console.log('🌐 Current URL:', window.location.href);
-        console.log('📍 Pathname:', window.location.pathname);
-        console.log('🔍 Search params:', window.location.search);
-        console.log('🔗 Hash:', window.location.hash);
+        console.log('🔄 [AUTH CALLBACK] Starting OAuth callback processing...');
+
+        // USE THE INITIALLY CAPTURED PARAMS FROM index.html
+        const initialParams = (window as any).__INITIAL_OAUTH_PARAMS__;
         
-        // Parse URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        const error = urlParams.get('error');
-        const errorDescription = urlParams.get('error_description');
-        
-        console.log('📦 URL Parameters:', {
-          hasCode: !!code,
-          codeLength: code?.length || 0,
-          error,
-          errorDescription
-        });
-        
-        if (error) {
-          console.error('❌ [AUTH CALLBACK] OAuth Error from Provider:', {
-            error,
-            description: errorDescription
-          });
+        if (!initialParams) {
+          console.error('❌ [AUTH CALLBACK] No initial params captured');
           setStatus('error');
-          toast.error(`فشل تسجيل الدخول: ${errorDescription || error}`);
-          setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
-          console.groupEnd();
+          toast.error('فشل في تحليل بيانات المصادقة');
+          timeoutId = setTimeout(() => navigate('/login', { replace: true }), REDIRECT_DELAY_ERROR);
           return;
         }
-        
-        if (!code) {
-          console.warn('⚠️ [AUTH CALLBACK] No authorization code in URL');
-        }
-        
-        // Check current session before setting up listener
-        console.log('🔎 Checking for existing session...');
-        const { data: { session: existingSession }, error: sessionError } = await supabase.auth.getSession();
-        console.log('📊 Existing session check:', {
-          hasSession: !!existingSession,
-          error: sessionError?.message,
-          userId: existingSession?.user?.id,
-          email: existingSession?.user?.email,
-          provider: existingSession?.user?.app_metadata?.provider
+
+        console.log('📜 [AUTH CALLBACK] Using initially captured params:', {
+          href: initialParams.href,
+          hash: initialParams.hash ? '***' : 'empty',
+          search: initialParams.search
         });
-        
-        if (existingSession) {
-          console.log('✅ [AUTH CALLBACK] Session already exists, redirecting...');
-          const userName = existingSession.user.user_metadata?.name || 
-                          existingSession.user.user_metadata?.full_name || 
-                          existingSession.user.email?.split('@')[0] || 
-                          'المستخدم';
-          
-          setStatus('done');
-          toast.success(`أهلاً بك، ${userName}!`, {
-            description: 'تم تسجيل الدخول بنجاح',
-            duration: 3000
-          });
-          console.groupEnd();
-          setTimeout(() => navigate('/'), REDIRECT_DELAY_SUCCESS);
+
+        // Parse parameters from the INITIALLY CAPTURED URL
+        const initialUrl = new URL(initialParams.href);
+        const initialSearchParams = new URLSearchParams(initialUrl.search);
+        const initialHashParams = new URLSearchParams(initialUrl.hash.substring(1));
+
+        console.log('🔍 [AUTH CALLBACK] Initial parameter analysis:', {
+          searchParams: Object.fromEntries(initialSearchParams.entries()),
+          hashParams: Object.fromEntries(initialHashParams.entries())
+        });
+
+        // Check for OAuth parameters in the INITIAL capture
+        const hasAccessToken = initialHashParams.has('access_token');
+        const hasRefreshToken = initialHashParams.has('refresh_token');
+        const hasCode = initialSearchParams.has('code');
+        const hasError = initialSearchParams.has('error') || initialHashParams.has('error');
+
+        console.log('🎯 [AUTH CALLBACK] Initial OAuth parameter check:', {
+          hasAccessToken,
+          hasRefreshToken, 
+          hasCode,
+          hasError,
+          tokenType: initialHashParams.get('token_type'),
+          expiresIn: initialHashParams.get('expires_in')
+        });
+
+        if (hasError) {
+          const errorDesc = initialSearchParams.get('error_description') || initialHashParams.get('error_description');
+          console.error('❌ [AUTH CALLBACK] OAuth error in initial params:', errorDesc);
+          setStatus('error');
+          toast.error(`خطأ في المصادقة: ${errorDesc || 'حدث خطأ غير معروف'}`);
+          timeoutId = setTimeout(() => navigate('/login', { replace: true }), REDIRECT_DELAY_ERROR);
           return;
         }
-        
-        console.log('👂 [AUTH CALLBACK] Setting up auth state listener...');
-        let listenerTriggered = false;
-        
-        // Listen for auth state changes - this will automatically handle the OAuth code exchange
-        authSubscription = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.group('🔔 [AUTH CALLBACK] Auth State Change');
-          console.log('⏰ Event timestamp:', new Date().toISOString());
-          console.log('📢 Event type:', event);
-          console.log('🔐 Session status:', session ? 'EXISTS' : 'NULL');
+
+        // SUCCESS CASE: We have tokens in the initial hash
+        if (hasAccessToken && hasRefreshToken) {
+          console.log('✅ [AUTH CALLBACK] OAuth tokens found in INITIAL hash');
           
-          if (session) {
-            console.log('👤 User details:', {
-              id: session.user.id,
-              email: session.user.email,
-              provider: session.user.app_metadata?.provider,
-              created_at: session.user.created_at,
-              metadata: session.user.user_metadata
+          // Manually set the session using the tokens from initial capture
+          const accessToken = initialHashParams.get('access_token');
+          const refreshToken = initialHashParams.get('refresh_token');
+          
+          if (accessToken && refreshToken) {
+            console.log('🔑 [AUTH CALLBACK] Setting session with captured tokens');
+            
+            // Set the session manually
+            const { data: { session }, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
             });
-            console.log('🎫 Session details:', {
-              access_token_length: session.access_token?.length || 0,
-              refresh_token_length: session.refresh_token?.length || 0,
-              expires_at: session.expires_at,
-              expires_in: session.expires_in
-            });
-          }
-          
-          console.groupEnd();
-          
-          if (cancelled) {
-            console.log('⏹️ [AUTH CALLBACK] Component unmounted, ignoring event');
-            return;
-          }
-          
-          if (listenerTriggered) {
-            console.log('⏭️ [AUTH CALLBACK] Listener already processed, skipping');
-            return;
-          }
-          
-          if (event === 'SIGNED_IN' && session) {
-            listenerTriggered = true;
-            console.log('✅ [AUTH CALLBACK] Sign-in successful!');
-            console.log('👤 [AUTH CALLBACK] User:', session.user.email);
-            
-            const userName = session.user.user_metadata?.name || 
-                            session.user.user_metadata?.full_name || 
-                            session.user.email?.split('@')[0] || 
-                            'المستخدم';
-            
-            setStatus('done');
-            toast.success(`أهلاً بك، ${userName}!`, {
-              description: 'تم تسجيل الدخول بنجاح',
-              duration: 3000
-            });
-            
-            console.log('🚀 [AUTH CALLBACK] Redirecting to home in', REDIRECT_DELAY_SUCCESS, 'ms');
-            console.groupEnd();
-            setTimeout(() => {
-              navigate('/');
-            }, REDIRECT_DELAY_SUCCESS);
-          } else if (event === 'INITIAL_SESSION' && !session) {
-            console.log('⏳ [AUTH CALLBACK] No initial session, waiting 2s for code exchange...');
-            
-            // Give it a moment for the session to be established
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Try to get session again
-            console.log('🔄 [AUTH CALLBACK] Retrying session check...');
-            const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession();
-            
-            console.log('🔍 [AUTH CALLBACK] Retry result:', {
-              hasSession: !!retrySession,
-              error: retryError?.message,
-              userId: retrySession?.user?.id
-            });
-            
-            if (retryError || !retrySession) {
-              listenerTriggered = true;
-              console.error('❌ [AUTH CALLBACK] No session after retry');
-              console.error('💥 [AUTH CALLBACK] Error details:', retryError);
+
+            if (error) {
+              console.error('❌ [AUTH CALLBACK] Manual session setting error:', error);
               setStatus('error');
-              toast.error('لم يتم العثور على جلسة. يرجى المحاولة مرة أخرى.');
-              console.groupEnd();
-              setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
+              toast.error('فشل في إنشاء الجلسة');
+              timeoutId = setTimeout(() => navigate('/login', { replace: true }), REDIRECT_DELAY_ERROR);
+              return;
+            }
+
+            if (session) {
+              console.log('✅ [AUTH CALLBACK] Session established manually:', session.user.email);
+              setStatus('done');
+              toast.success('تم تسجيل الدخول بنجاح!');
+              
+              // Clear the initial params to avoid reuse
+              (window as any).__INITIAL_OAUTH_PARAMS__ = null;
+              
+              timeoutId = setTimeout(() => navigate('/', { replace: true }), REDIRECT_DELAY_SUCCESS);
             } else {
-              console.log('✅ [AUTH CALLBACK] Session found on retry!');
+              throw new Error('No session after manual token setting');
             }
           }
-        });
-        
-        console.log('✅ [AUTH CALLBACK] Auth listener setup complete');
-        console.groupEnd();
-        
-      } catch (error: any) {
-        console.group('❌ [AUTH CALLBACK] Fatal Error');
-        console.error('💥 Error object:', error);
-        console.error('📝 Error message:', error?.message);
-        console.error('📚 Error stack:', error?.stack);
-        console.groupEnd();
-        
+        }
+        // Wait for auth state change as fallback
+        else {
+          console.log('⏳ [AUTH CALLBACK] Waiting for auth state change...');
+          
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            async (event, session) => {
+              if (cancelled) return;
+              
+              console.log('🔄 [AUTH CALLBACK] Auth state change:', event);
+              
+              if (event === 'SIGNED_IN' && session) {
+                console.log('✅ [AUTH CALLBACK] User signed in via OAuth:', session.user.email);
+                setStatus('done');
+                toast.success('تم تسجيل الدخول بنجاح!');
+                
+                // Clear the initial params
+                (window as any).__INITIAL_OAUTH_PARAMS__ = null;
+                
+                if (timeoutId) clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => navigate('/', { replace: true }), REDIRECT_DELAY_SUCCESS);
+                
+                subscription.unsubscribe();
+              }
+            }
+          );
+
+          // Fallback timeout
+          timeoutId = setTimeout(() => {
+            if (cancelled) return;
+            console.log('❌ [AUTH CALLBACK] Timeout waiting for session');
+            setStatus('error');
+            toast.error('انتهت مهلة تسجيل الدخول');
+            subscription.unsubscribe();
+            navigate('/login', { replace: true });
+          }, 5000);
+        }
+
+      } catch (error) {
+        console.error('❌ [AUTH CALLBACK] Critical error:', error);
         if (!cancelled) {
           setStatus('error');
-          toast.error('حدث خطأ غير متوقع');
-          setTimeout(() => navigate('/'), REDIRECT_DELAY_ERROR);
+          toast.error('حدث خطأ غير متوقع في تسجيل الدخول');
+          timeoutId = setTimeout(() => navigate('/login', { replace: true }), REDIRECT_DELAY_ERROR);
         }
       }
     };
 
     handleCallback();
-    
+
     return () => {
-      console.log('🧹 [AUTH CALLBACK] Cleaning up...');
       cancelled = true;
-      if (authSubscription) {
-        authSubscription.data?.subscription?.unsubscribe();
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [navigate]);
 
@@ -205,6 +170,7 @@ export function AuthCallback() {
           <>
             <div className="mx-auto h-12 w-12 border-3 border-procell-primary border-t-transparent rounded-full animate-spin" />
             <p className="text-lg font-medium">جاري إكمال تسجيل الدخول...</p>
+            <p className="text-sm text-gray-500">يتم الآن معالجة بيانات المصادقة</p>
           </>
         )}
         {status === 'done' && (
@@ -224,7 +190,7 @@ export function AuthCallback() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <p className="text-lg font-medium text-red-600">حدث خطأ</p>
+            <p className="text-lg font-medium text-red-600">حدث خطأ في تسجيل الدخول</p>
           </>
         )}
       </div>

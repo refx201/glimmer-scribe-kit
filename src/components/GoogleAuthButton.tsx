@@ -6,75 +6,26 @@ import { useState } from 'react';
 export function GoogleAuthButton() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setIsLoading(true);
-      
-      console.group('🔐 [GOOGLE AUTH] Initiating OAuth Flow');
-      console.log('⏰ Timestamp:', new Date().toISOString());
-      console.log('🌐 Current URL:', window.location.href);
-      console.log('🏠 Hostname:', window.location.hostname);
-      console.log('🔌 Protocol:', window.location.protocol);
-      console.log('🚪 Port:', window.location.port);
-      
-      // Determine full redirect URL based on environment
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      
-      console.log('📍 Origin:', window.location.origin);
-      console.log('🔗 Redirect URL:', redirectUrl);
-      
-      // Check Supabase client configuration
-      const { data: { session: existingSession } } = await supabase.auth.getSession();
-      console.log('🔍 Existing session before OAuth:', existingSession ? 'EXISTS' : 'NONE');
-      
-      console.log('🚀 Starting OAuth with provider: google');
-      console.log('⚙️ OAuth options:', {
-        redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        }
-      });
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      });
-
-      if (error) {
-        console.group('❌ [GOOGLE AUTH] OAuth Error');
-        console.error('💥 Error object:', error);
-        console.error('📝 Message:', error.message);
-        console.error('🏷️ Name:', error.name);
-        console.error('📊 Status:', (error as any).status);
-        console.groupEnd();
-        throw error;
+const handleGoogleSignIn = async () => {
+  try {
+    setIsLoading(true);
+    
+    // Use simpler configuration
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: false
       }
+    });
 
-      console.log('✅ [GOOGLE AUTH] OAuth initiated successfully');
-      console.log('📦 OAuth data:', data);
-      console.log('🔗 OAuth URL:', data?.url);
-      console.log('🎯 Provider:', data?.provider);
-      console.groupEnd();
-      
-      // Supabase will handle the redirect
-    } catch (error: any) {
-      console.group('❌ [GOOGLE AUTH] Fatal Error');
-      console.error('💥 Error:', error);
-      console.error('📝 Message:', error?.message);
-      console.error('📚 Stack:', error?.stack);
-      console.groupEnd();
-      
-      toast.error('حدثت مشكلة في تسجيل الدخول عبر Google');
-      setIsLoading(false);
-    }
-  };
+    if (error) throw error;
+  } catch (error) {
+    console.error('OAuth error:', error);
+    toast.error('حدثت مشكلة في تسجيل الدخول');
+    setIsLoading(false);
+  }
+};
 
   return (
     <Button
