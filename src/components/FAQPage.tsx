@@ -207,7 +207,7 @@ export function FAQPage() {
   const popularFAQs = faqData.filter(faq => faq.popular);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50" dir="rtl">
       {/* Header Section */}
       <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
@@ -232,13 +232,13 @@ export function FAQPage() {
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto relative">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="ابحث في الأسئلة الشائعة..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 text-lg rounded-xl bg-white/95 backdrop-blur-sm text-gray-900 placeholder-gray-500 border-0 focus:ring-2 focus:ring-white/50 focus:outline-none shadow-xl"
+                  className="w-full pr-12 pl-4 py-4 text-lg rounded-xl bg-white/95 backdrop-blur-sm text-gray-900 placeholder-gray-500 border-0 focus:ring-2 focus:ring-white/50 focus:outline-none shadow-xl text-right"
                 />
               </div>
             </div>
@@ -270,11 +270,11 @@ export function FAQPage() {
                     <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                       <HelpCircle className="h-4 w-4 text-white" />
                     </div>
-                    <CardTitle className="text-lg text-gray-900 leading-tight">{faq.question}</CardTitle>
+                    <CardTitle className="text-lg text-gray-900 leading-tight text-right">{faq.question}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-700 leading-relaxed line-clamp-3">{faq.answer}</p>
+                  <p className="text-gray-700 leading-relaxed line-clamp-3 text-right">{faq.answer}</p>
                 </CardContent>
               </Card>
             ))}
@@ -327,8 +327,8 @@ export function FAQPage() {
                     value={`item-${faq.id}`}
                     className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
                   >
-                    <AccordionTrigger className="px-6 py-4 text-right hover:no-underline group">
-                      <div className="flex items-start gap-4 w-full">
+                    <AccordionTrigger className="px-6 py-4 hover:no-underline group">
+                      <div className="flex items-start gap-4 w-full text-right">
                         <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition-colors">
                           <HelpCircle className="h-4 w-4 text-blue-600" />
                         </div>
@@ -347,7 +347,7 @@ export function FAQPage() {
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
                       <div className="bg-gray-50 rounded-lg p-4 mr-12">
-                        <p className="text-gray-700 leading-relaxed text-base">
+                        <p className="text-gray-700 leading-relaxed text-base text-right">
                           {faq.answer}
                         </p>
                       </div>
