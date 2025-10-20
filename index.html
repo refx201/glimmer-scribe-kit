@@ -1,6 +1,28 @@
 <!DOCTYPE html>
 <html lang="ar">
   <head>
+    
+    <script>
+      // Capture OAuth parameters before ANY React code runs
+      (function() {
+        // Only capture if we're on the callback route and have hash parameters
+        if (window.location.pathname === '/auth/callback' && window.location.hash) {
+          window.__INITIAL_OAUTH_PARAMS__ = {
+            href: window.location.href,
+            search: window.location.search,
+            hash: window.location.hash,
+            timestamp: new Date().toISOString()
+          };
+          console.log('📜 INITIAL PARAMS CAPTURED (with hash):', {
+            hasHash: !!window.__INITIAL_OAUTH_PARAMS__.hash,
+            hashLength: window.__INITIAL_OAUTH_PARAMS__.hash?.length
+          });
+        } else {
+          window.__INITIAL_OAUTH_PARAMS__ = null;
+        }
+      })();
+    </script>
+
     <meta charset="UTF-8" />
     <link rel="icon" href="/fav.png" type="image/png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
