@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     console.log('[AUTH] Starting profile sync for user:', userId);
     console.log('[AUTH] Session provider:', session.user.app_metadata?.provider);
     console.log('[AUTH] User metadata:', session.user.user_metadata);
-    
+
     try {
       // Fetch user roles
       const roles = await fetchUserRoles(userId);
@@ -231,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    
+
     // Set up auth state listener FIRST (critical for OAuth)
     console.log('[AUTH] Setting up auth state listener...');
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -246,18 +246,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           provider: session?.user?.app_metadata?.provider,
           expiresAt: session?.expires_at
         });
-        
+
         if (!mounted) return;
-        
+
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           console.log('[AUTH] ✅ User session active');
           console.log('[AUTH] User metadata:', session.user.user_metadata);
           console.log('[AUTH] App metadata:', session.user.app_metadata);
           console.log('[AUTH] Starting profile sync in background...');
-          
+
           // Sync profile in background
           setTimeout(async () => {
             if (mounted) {
@@ -266,17 +266,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.log('[AUTH] Profile sync completed');
             }
           }, 0);
-          
+
           // Handle successful sign-in - ONLY for email/password
           // OAuth sign-in is handled by AuthCallback component
           if (event === 'SIGNED_IN') {
             const provider = session.user.app_metadata?.provider;
             const currentPath = window.location.pathname;
-            
+
             console.log('🎉 [AUTH CONTEXT] Sign in detected');
             console.log('🔑 [AUTH CONTEXT] Provider:', provider);
             console.log('📍 [AUTH CONTEXT] Current path:', currentPath);
-            
+
             // OAuth logins are handled by AuthCallback - don't interfere!
             if (provider === 'google' || provider === 'apple') {
               // If we're already on callback page, let it handle everything
@@ -284,23 +284,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 console.log('ℹ️ [AUTH CONTEXT] On callback page - letting AuthCallback handle everything');
                 return;
               }
-              
+
               console.log('ℹ️ [AUTH CONTEXT] OAuth login completed, AuthCallback should have handled it');
               return;
             }
-            
+
             // Only handle email/password logins here
             console.log('📧 [AUTH CONTEXT] Email/password login detected');
-            const userName = session.user.user_metadata?.name || 
-                            session.user.user_metadata?.full_name || 
-                            session.user.email?.split('@')[0] || 
-                            'المستخدم';
-            
+            const userName = session.user.user_metadata?.name ||
+              session.user.user_metadata?.full_name ||
+              session.user.email?.split('@')[0] ||
+              'المستخدم';
+
             toast.success(`أهلاً بك، ${userName}!`, {
               description: 'تم تسجيل الدخول بنجاح',
               duration: 3000
             });
-            
+
             // Only redirect if not already on home page (prevents refresh loop)
             if (currentPath !== '/') {
               console.log('🚀 [AUTH CONTEXT] Redirecting to home...');
@@ -326,11 +326,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setPresenceChannel(null);
           }
         }
-        
+
         setLoading(false);
       }
     );
-    
+
     // Initialize auth by checking for existing session
     const initializeAuth = async () => {
       try {
@@ -338,13 +338,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('[AUTH] Timestamp:', new Date().toISOString());
         console.log('[AUTH] Current URL:', window.location.href);
         console.log('[AUTH] Pathname:', window.location.pathname);
-        
+
         // Check for existing session (OAuth callback is handled by AuthCallback component)
         console.log('[AUTH] Checking for existing session...');
         const sessionCheckStart = Date.now();
         const { data: { session }, error } = await supabase.auth.getSession();
         const sessionCheckDuration = Date.now() - sessionCheckStart;
-        
+
         console.log('[AUTH] Session check completed in:', sessionCheckDuration, 'ms');
         console.log('[AUTH] Session result:', {
           hasSession: !!session,
@@ -353,7 +353,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           userId: session?.user?.id,
           userEmail: session?.user?.email
         });
-        
+
         if (error) {
           console.error('[AUTH] ❌ Error getting session:', {
             message: error.message,
@@ -361,28 +361,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: error.name
           });
         }
-        
+
         if (!mounted) {
           console.log('[AUTH] ⚠️ Component unmounted, skipping initialization');
           return;
         }
-        
+
         if (session) {
           console.log('[AUTH] ✅ Existing session found');
           console.log('[AUTH] User email:', session.user.email);
           console.log('[AUTH] User ID:', session.user.id);
           console.log('[AUTH] Provider:', session.user.app_metadata?.provider);
-          
+
           setSession(session);
           setUser(session.user);
-          
+
           console.log('[AUTH] Syncing profile with database...');
           await syncProfileWithDatabase(session.user.id, session);
           console.log('[AUTH] Profile sync completed');
         } else {
           console.log('[AUTH] ℹ️ No existing session found');
         }
-        
+
         setLoading(false);
         console.log('[AUTH] ✅ Initialization complete');
       } catch (error) {
@@ -397,7 +397,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     };
-    
+
     // Start initialization
     initializeAuth();
 
@@ -419,7 +419,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, name: string, userType = 'customer', phone?: string) => {
     try {
       console.log('Frontend signup attempt - auto-confirming user')
-      
+
       // Use Supabase client with emailRedirectTo and auto-confirmation disabled
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -433,11 +433,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       })
-      
+
       if (error) throw error
-      
+
       console.log('User signed up successfully:', data.user?.email)
-      
+
       // Show welcome toast
       toast.success('مرحباً بك! تم إنشاء حسابك بنجاح', {
         description: 'يمكنك الآن تسجيل الدخول والاستمتاع بخدماتنا'
@@ -454,9 +454,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
       })
-      
+
       if (error) throw error
-      
+
       // onAuthStateChange will handle the redirect
     } catch (error) {
       console.error('Sign in error:', error)
@@ -466,39 +466,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+      console.log('🚀 [GOOGLE OAUTH] Starting OAuth flow');
+      console.log('📍 [GOOGLE OAUTH] Current origin:', window.location.origin);
+
       const redirectUrl = `${window.location.origin}/auth/callback`;
-        
+      console.log('🔗 [GOOGLE OAUTH] Redirect URL:', redirectUrl);
+
+      // Test if we can create the OAuth URL
+      console.log('🔧 [GOOGLE OAUTH] Creating OAuth sign-in...');
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
+            prompt: 'consent'
           }
         }
-      })
-      if (error) throw error
-      
-      // Toast will be shown after redirect in the auth state change listener
+      });
+
+      if (error) {
+        console.error('❌ [GOOGLE OAUTH] Error creating OAuth URL:', error);
+        throw error;
+      }
+
+      console.log('✅ [GOOGLE OAUTH] OAuth URL created successfully');
+      console.log('📦 [GOOGLE OAUTH] Response data:', data);
+
+      // The browser should redirect automatically
+
     } catch (error) {
-      console.error('Google sign in error:', error)
-      toast.error('فشل تسجيل الدخول عبر Google')
-      throw error
+      console.error('❌ [GOOGLE OAUTH] Critical error:', error);
+      toast.error('فشل تسجيل الدخول عبر Google');
+      throw error;
     }
   }
 
   const signInWithApple = async () => {
     try {
+      console.log('[AUTH] 🚀 Starting Apple OAuth flow');
+
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('[AUTH] 📍 Redirect URL:', redirectUrl);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false
         }
       })
-      if (error) throw error
+
+      if (error) {
+        console.error('[AUTH] ❌ Apple OAuth error:', error);
+        throw error;
+      }
+
+      console.log('[AUTH] ✅ Apple OAuth redirect initiated');
     } catch (error) {
-      console.error('Apple sign in error:', error)
+      console.error('[AUTH] ❌ Apple sign in error:', error)
+      toast.error('فشل تسجيل الدخول عبر Apple')
       throw error
     }
   }
