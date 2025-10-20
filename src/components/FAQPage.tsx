@@ -225,7 +225,7 @@ export function FAQPage() {
               🤔 الأسئلة الشائعة
             </h1>
             
-            <p className="text-xl text-blue-100 mb-8 leading-relaxed">
+            <p className="text-xl text-blue-100 mb-8 leading-relaxed text-right">
               إجابات على جميع أسئلتك حول خدمات ProCell وبرامجنا المتنوعة
             </p>
 
