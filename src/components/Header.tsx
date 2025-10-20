@@ -685,23 +685,28 @@ function HeaderContent({ currentPage, onNavigate }: HeaderProps) {
                                <div className="text-xs text-gray-500">{user.email}</div>
                              </div>
                            </div>
-                           <Button
-                             onClick={() => handleNavigation('profile')}
-                             variant="outline"
-                             className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
-                           >
-                             <User className="h-4 w-4 ml-2" />
-                             الملف الشخصي
-                           </Button>
-                           <Button
-                             onClick={handleSignOut}
-                             variant="outline"
-                             className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
-                             disabled={loading}
-                           >
-                             <LogOut className="h-4 w-4 ml-2" />
-                             {loading ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
-                           </Button>
+                            <Button
+                              onClick={() => {
+                                handleNavigation('profile');
+                                closeMenu();
+                              }}
+                              variant="outline"
+                              className="w-full border-blue-300 text-blue-700 hover:bg-blue-50 active:bg-blue-100"
+                            >
+                              <User className="h-4 w-4 ml-2" />
+                              الملف الشخصي
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                handleSignOut();
+                              }}
+                              variant="outline"
+                              className="w-full border-red-300 text-red-700 hover:bg-red-50 active:bg-red-100 touch-manipulation"
+                              disabled={loading}
+                            >
+                              <LogOut className="h-4 w-4 ml-2" />
+                              {loading ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
+                            </Button>
                          </div>
                          ) : (
                            <Button
